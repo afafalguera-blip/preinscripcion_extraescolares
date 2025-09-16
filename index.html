@@ -23,21 +23,46 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .lang-btn.active {
-            font-weight: bold;
-            color: #1d4ed8; /* text-blue-800 */
-            background-color: #eff6ff; /* bg-blue-50 */
-            border: 2px solid #3b82f6; /* border-blue-500 */
+        .selector-idioma {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .lang-btn {
-            border: 2px solid transparent;
+        .idioma-actual {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
             transition: all 0.2s ease-in-out;
         }
-        .language-selector img {
-            width: 30px; /* Ajusta el tamaño según tus necesidades */
-            height: auto;
-            margin: 0 5px; /* Añade un pequeño espacio entre las banderas */
-            border-radius: 50%; /* Opcional: para mostrar las banderas en formato circular */
+        .idioma-actual:hover {
+            background-color: #2563eb;
+        }
+        .otros-idiomas {
+            display: flex;
+            gap: 5px;
+        }
+        .lang-link {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            background-color: #f3f4f6;
+            color: #374151;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s ease-in-out;
+        }
+        .lang-link:hover {
+            background-color: #e5e7eb;
+            color: #1f2937;
         }
         /* Modal styles */
         .modal-overlay {
@@ -67,15 +92,17 @@
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
         
         <div class="flex justify-end items-center mb-4">
-            <div class="language-selector text-right">
-                <button id="lang-ca" class="lang-btn active p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors" title="Català">
-                    <img src="https://flagcdn.com/w40/es-ct.png" alt="Bandera de Cataluña" class="flag-img">
-                    <span class="text-sm font-medium">Català</span>
-                </button>
-                <button id="lang-es" class="lang-btn text-gray-600 p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors" title="Español">
-                    <img src="https://flagcdn.com/w40/es.png" alt="Bandera de España" class="flag-img">
-                    <span class="text-sm font-medium">Español</span>
-                </button>
+            <div class="selector-idioma text-right">
+                <div class="idioma-actual" id="current-lang">
+                    <span id="current-lang-code">ES</span>
+                    <span id="current-lang-name">Español</span>
+                </div>
+                <div class="otros-idiomas">
+                    <a href="#" id="lang-ca" class="lang-link">
+                        <span>CA</span>
+                        <span>Català</span>
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -696,19 +723,15 @@
                 const key = element.dataset.langPlaceholder;
                 if (translations[lang][key]) element.placeholder = translations[lang][key];
             });
-            const caBtn = document.getElementById('lang-ca');
-            const esBtn = document.getElementById('lang-es');
+            const currentLangCode = document.getElementById('current-lang-code');
+            const currentLangName = document.getElementById('current-lang-name');
             
             if (lang === 'ca') {
-                caBtn.classList.add('active');
-                caBtn.classList.remove('text-gray-600');
-                esBtn.classList.remove('active');
-                esBtn.classList.add('text-gray-600');
+                currentLangCode.textContent = 'CA';
+                currentLangName.textContent = 'Català';
             } else {
-                esBtn.classList.add('active');
-                esBtn.classList.remove('text-gray-600');
-                caBtn.classList.remove('active');
-                caBtn.classList.add('text-gray-600');
+                currentLangCode.textContent = 'ES';
+                currentLangName.textContent = 'Español';
             }
             renderActivityCards();
         };
@@ -783,8 +806,14 @@
             });
         });
 
-        document.getElementById('lang-ca').addEventListener('click', () => setLanguage('ca'));
-        document.getElementById('lang-es').addEventListener('click', () => setLanguage('es'));
+        document.getElementById('lang-ca').addEventListener('click', (e) => {
+            e.preventDefault();
+            setLanguage('ca');
+        });
+        
+        document.getElementById('current-lang').addEventListener('click', () => {
+            setLanguage(currentLang === 'ca' ? 'es' : 'ca');
+        });
         
         document.addEventListener('DOMContentLoaded', () => {
             renderActivityCards();
