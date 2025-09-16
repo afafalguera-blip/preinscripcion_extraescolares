@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Administración - AFA Escola Falguera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .login-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+    </style>
+</head>
+<body class="login-container min-h-screen flex items-center justify-center p-4">
+    <div class="login-card w-full max-w-md p-8 rounded-2xl shadow-2xl">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900">Panel de Administración</h1>
+            <p class="text-gray-600 mt-2">AFA Escola Falguera</p>
+        </div>
+
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                    Usuario
+                </label>
+                <input type="text" 
+                       id="username" 
+                       name="username" 
+                       required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                       placeholder="Ingresa tu usuario">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                    Contraseña
+                </label>
+                <div class="relative">
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-12"
+                           placeholder="Ingresa tu contraseña">
+                    <button type="button" 
+                            id="toggle-password"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="error-message" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span id="error-text">Usuario o contraseña incorrectos</span>
+                </div>
+            </div>
+
+            <button type="submit" 
+                    id="login-button"
+                    class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium">
+                <span id="login-text">Iniciar Sesión</span>
+                <span id="login-loader" class="hidden">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Verificando...
+                </span>
+            </button>
+        </form>
+
+        <div class="mt-6 text-center">
+            <a href="navigation.html" class="text-blue-600 hover:text-blue-800 text-sm">
+                ← Volver al inicio
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = "https://zaxbtnjkidqwzqsehvld.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGJ0bmpraWRxd3pxc2VodmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMjc2NTMsImV4cCI6MjA3MzYwMzY1M30.9MNjQdeLvW_UaxZz0XQmR6jQSakzF-UzBWvdboWWHRg";
+
+        // Elementos del DOM
+        const loginForm = document.getElementById('login-form');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const loginButton = document.getElementById('login-button');
+        const loginText = document.getElementById('login-text');
+        const loginLoader = document.getElementById('login-loader');
+
+        // Toggle password visibility
+        togglePasswordBtn.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            const icon = togglePasswordBtn.querySelector('svg');
+            if (type === 'text') {
+                icon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                `;
+            } else {
+                icon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                `;
+            }
+        });
+
+        // Handle form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            // Show loading state
+            setLoading(true);
+            hideError();
+
+            try {
+                // Autenticar usando Supabase
+                const authResult = await authenticateWithSupabase(username, password);
+                
+                if (authResult.success) {
+                    // Store authentication in sessionStorage
+                    sessionStorage.setItem('admin_authenticated', 'true');
+                    sessionStorage.setItem('admin_user', username);
+                    sessionStorage.setItem('admin_user_id', authResult.user_id);
+                    sessionStorage.setItem('admin_login_time', new Date().toISOString());
+                    
+                    // Redirect to admin panel
+                    window.location.href = 'admin.html';
+                } else {
+                    showError(authResult.message || 'Usuario o contraseña incorrectos');
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error('Error de autenticación:', error);
+                showError('Error de conexión. Inténtalo de nuevo.');
+                setLoading(false);
+            }
+        });
+
+        // Función para autenticar con Supabase
+        async function authenticateWithSupabase(username, password) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/authenticate_admin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        p_username: username,
+                        p_password: password
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    return {
+                        success: data[0].success,
+                        user_id: data[0].user_id,
+                        message: data[0].message
+                    };
+                } else {
+                    return {
+                        success: false,
+                        user_id: null,
+                        message: 'Error en la respuesta del servidor'
+                    };
+                }
+            } catch (error) {
+                console.error('Error en authenticateWithSupabase:', error);
+                return {
+                    success: false,
+                    user_id: null,
+                    message: 'Error de conexión con el servidor'
+                };
+            }
+        }
+
+        // Check if already authenticated
+        document.addEventListener('DOMContentLoaded', () => {
+            const isAuthenticated = sessionStorage.getItem('admin_authenticated');
+            const loginTime = sessionStorage.getItem('admin_login_time');
+            
+            if (isAuthenticated === 'true' && loginTime) {
+                // Check if session is still valid (24 hours)
+                const loginDate = new Date(loginTime);
+                const now = new Date();
+                const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+                
+                if (hoursDiff < 24) {
+                    // Still authenticated, redirect to admin
+                    window.location.href = 'admin.html';
+                } else {
+                    // Session expired, clear storage
+                    sessionStorage.removeItem('admin_authenticated');
+                    sessionStorage.removeItem('admin_user');
+                    sessionStorage.removeItem('admin_login_time');
+                }
+            }
+        });
+
+        function setLoading(isLoading) {
+            loginButton.disabled = isLoading;
+            loginText.classList.toggle('hidden', isLoading);
+            loginLoader.classList.toggle('hidden', !isLoading);
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+            usernameInput.focus();
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+
+        // Focus on username field
+        usernameInput.focus();
+    </script>
+</body>
+</html>
