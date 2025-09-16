@@ -143,6 +143,14 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado:</label>
+                        <select id="status-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                            <option value="active">Solo Activos</option>
+                            <option value="suspended">Solo Suspendidos</option>
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Buscar:</label>
                         <input type="text" id="search-input" placeholder="Nombre del alumno..." class="border border-gray-300 rounded-md px-3 py-2">
                     </div>
@@ -195,6 +203,33 @@
                 </div>
                 <div id="modal-content" class="space-y-4">
                     <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for editing inscription -->
+    <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
+        <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-6xl">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-2xl font-semibold text-gray-900">Editar Inscripción</h3>
+                    <button id="close-edit-modal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="edit-modal-content" class="space-y-6">
+                    <!-- Content will be loaded here -->
+                </div>
+                <div class="flex justify-end space-x-4 mt-6 pt-4 border-t">
+                    <button id="cancel-edit" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="save-edit" class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        Guardar Cambios
+                    </button>
                 </div>
             </div>
         </div>
@@ -373,18 +408,31 @@
                 if (inscription.students && Array.isArray(inscription.students)) {
                     // New format with multiple students - crear una fila por estudiante
                     inscription.students.forEach((student, studentIndex) => {
+                        // Verificar si el estudiante está suspendido
+                        const isSuspended = student.suspended === true;
+                        const statusFilter = document.getElementById('status-filter').value;
+                        
+                        // Aplicar filtro de estado
+                        if (statusFilter === 'active' && isSuspended) return;
+                        if (statusFilter === 'suspended' && !isSuspended) return;
+                        
                         const activitiesInfo = student.activities ? 
                             (student.activities.slice(0, 2).join(', ') + 
                             (student.activities.length > 2 ? ` +${student.activities.length - 2} más` : '')) : 
                             'N/A';
                         
-                        const isFirstStudent = studentIndex === 0;
-                        const rowSpan = isFirstStudent ? inscription.students.length : 0;
+                        const rowClass = isSuspended ? 'bg-yellow-50 opacity-75' : 'hover:bg-gray-50';
+                        const statusBadge = isSuspended ? 
+                            '<span class="status-badge bg-yellow-100 text-yellow-800">Suspendido</span>' :
+                            `<span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
+                                ${inscription.afa_member ? 'Sí' : 'No'}
+                            </span>`;
                         
                         tableRows.push(`
-                        <tr class="hover:bg-gray-50">
+                        <tr class="${rowClass}">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">${student.name} ${student.surname}</div>
+                                ${isSuspended ? '<div class="text-xs text-yellow-600">Suspendido</div>' : ''}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="text-sm text-gray-900">${student.course}</span>
@@ -392,42 +440,56 @@
                             <td class="px-6 py-4">
                                 <div class="text-sm text-gray-900">${activitiesInfo}</div>
                             </td>
-                            ${isFirstStudent ? `
-                            <td class="px-6 py-4 whitespace-nowrap" rowspan="${inscription.students.length}">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">${inscription.parent_phone_1 || 'N/A'}</div>
                                 <div class="text-sm text-gray-500">${inscription.parent_email_1 || 'N/A'}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap" rowspan="${inscription.students.length}">
-                                <span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
-                                    ${inscription.afa_member ? 'Sí' : 'No'}
-                                </span>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                ${statusBadge}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" rowspan="${inscription.students.length}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 ${inscription.created_at ? new Date(inscription.created_at).toLocaleDateString('es-ES') : 'N/A'}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" rowspan="${inscription.students.length}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
                                     Ver detalles
+                                </button>
+                                <button onclick="editInscription('${inscription.id}')" class="text-green-600 hover:text-green-900 mr-3">
+                                    Editar
                                 </button>
                                 <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
                                     Eliminar
                                 </button>
                             </td>
-                            ` : ''}
                         </tr>
                         `);
                     });
                 } else {
                     // Old format with single student
+                    const isSuspended = inscription.student_suspended === true;
+                    const statusFilter = document.getElementById('status-filter').value;
+                    
+                    // Aplicar filtro de estado
+                    if (statusFilter === 'active' && isSuspended) return;
+                    if (statusFilter === 'suspended' && !isSuspended) return;
+                    
                     const activitiesInfo = inscription.activities ? 
                         (inscription.activities.slice(0, 2).join(', ') + 
                         (inscription.activities.length > 2 ? ` +${inscription.activities.length - 2} más` : '')) : 
                         'N/A';
                     
+                    const rowClass = isSuspended ? 'bg-yellow-50 opacity-75' : 'hover:bg-gray-50';
+                    const statusBadge = isSuspended ? 
+                        '<span class="status-badge bg-yellow-100 text-yellow-800">Suspendido</span>' :
+                        `<span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
+                            ${inscription.afa_member ? 'Sí' : 'No'}
+                        </span>`;
+                    
                     tableRows.push(`
-                    <tr class="hover:bg-gray-50">
+                    <tr class="${rowClass}">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-900">${inscription.student_name || ''} ${inscription.student_surname || ''}</div>
+                            ${isSuspended ? '<div class="text-xs text-yellow-600">Suspendido</div>' : ''}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-sm text-gray-900">${inscription.student_course || 'N/A'}</span>
@@ -440,9 +502,7 @@
                             <div class="text-sm text-gray-500">${inscription.parent_email_1 || 'N/A'}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
-                                ${inscription.afa_member ? 'Sí' : 'No'}
-                            </span>
+                            ${statusBadge}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             ${inscription.created_at ? new Date(inscription.created_at).toLocaleDateString('es-ES') : 'N/A'}
@@ -450,6 +510,9 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
                                 Ver detalles
+                            </button>
+                            <button onclick="editInscription('${inscription.id}')" class="text-green-600 hover:text-green-900 mr-3">
+                                Editar
                             </button>
                             <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
                                 Eliminar
@@ -681,12 +744,24 @@
             // Filters
             document.getElementById('course-filter').addEventListener('change', applyFilters);
             document.getElementById('activity-filter').addEventListener('change', applyFilters);
+            document.getElementById('status-filter').addEventListener('change', applyFilters);
             document.getElementById('search-input').addEventListener('input', applyFilters);
             
             // Modal close
             document.getElementById('close-modal').addEventListener('click', () => {
                 document.getElementById('detail-modal').classList.add('hidden');
             });
+            
+            // Edit modal close
+            document.getElementById('close-edit-modal').addEventListener('click', () => {
+                document.getElementById('edit-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancel-edit').addEventListener('click', () => {
+                document.getElementById('edit-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('save-edit').addEventListener('click', saveInscriptionChanges);
         }
 
         function applyFilters() {
@@ -788,8 +863,350 @@
         // Make functions globally available
         window.changePage = changePage;
         window.viewDetails = viewDetails;
+        window.editInscription = editInscription;
+        window.toggleStudentStatus = toggleStudentStatus;
+        window.addNewStudent = addNewStudent;
         window.deleteInscription = deleteInscription;
         window.logout = logout;
+
+        let currentEditingInscription = null;
+
+        function editInscription(id) {
+            const inscription = allInscriptions.find(ins => ins.id === id);
+            if (!inscription) return;
+
+            currentEditingInscription = inscription;
+            const modal = document.getElementById('edit-modal');
+            const content = document.getElementById('edit-modal-content');
+            
+            let studentsHtml = '';
+            
+            if (inscription.students && Array.isArray(inscription.students)) {
+                // New format with multiple students
+                studentsHtml = inscription.students.map((student, index) => `
+                    <div class="border border-gray-200 rounded-lg p-4" data-student-index="${index}">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-lg font-semibold text-gray-800">Alumno/a ${index + 1}</h4>
+                            <div class="flex space-x-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" ${student.suspended !== true ? 'checked' : ''} 
+                                           class="student-status mr-2" />
+                                    <span class="text-sm font-medium">Activo</span>
+                                </label>
+                                <button onclick="toggleStudentStatus(${index})" 
+                                        class="${student.suspended !== true ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'} text-sm font-medium">
+                                    ${student.suspended !== true ? 'Suspender' : 'Reactivar'}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <input type="text" value="${student.name}" class="student-name border border-gray-300 rounded-md px-3 py-2 w-full" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                                <input type="text" value="${student.surname}" class="student-surname border border-gray-300 rounded-md px-3 py-2 w-full" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                                <select class="student-course border border-gray-300 rounded-md px-3 py-2 w-full">
+                                    <option value="I3" ${student.course === 'I3' ? 'selected' : ''}>I3</option>
+                                    <option value="I4" ${student.course === 'I4' ? 'selected' : ''}>I4</option>
+                                    <option value="I5" ${student.course === 'I5' ? 'selected' : ''}>I5</option>
+                                    <option value="1PRI" ${student.course === '1PRI' ? 'selected' : ''}>1º Primaria</option>
+                                    <option value="2PRI" ${student.course === '2PRI' ? 'selected' : ''}>2º Primaria</option>
+                                    <option value="3PRI" ${student.course === '3PRI' ? 'selected' : ''}>3º Primaria</option>
+                                    <option value="4PRI" ${student.course === '4PRI' ? 'selected' : ''}>4º Primaria</option>
+                                    <option value="5PRI" ${student.course === '5PRI' ? 'selected' : ''}>5º Primaria</option>
+                                    <option value="6PRI" ${student.course === '6PRI' ? 'selected' : ''}>6º Primaria</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
+                                <div class="space-y-2">
+                                    ${getAvailableActivities().map(activity => `
+                                        <label class="flex items-center">
+                                            <input type="checkbox" value="${activity}" 
+                                                   ${student.activities && student.activities.includes(activity) ? 'checked' : ''}
+                                                   class="student-activity mr-2" />
+                                            <span class="text-sm">${activity}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                // Old format with single student - convert to new format
+                studentsHtml = `
+                    <div class="border border-gray-200 rounded-lg p-4" data-student-index="0">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-lg font-semibold text-gray-800">Alumno/a 1</h4>
+                            <div class="flex space-x-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" ${inscription.student_suspended !== true ? 'checked' : ''} 
+                                           class="student-status mr-2" />
+                                    <span class="text-sm font-medium">Activo</span>
+                                </label>
+                                <button onclick="toggleStudentStatus(0)" 
+                                        class="${inscription.student_suspended !== true ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'} text-sm font-medium">
+                                    ${inscription.student_suspended !== true ? 'Suspender' : 'Reactivar'}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <input type="text" value="${inscription.student_name || ''}" class="student-name border border-gray-300 rounded-md px-3 py-2 w-full" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                                <input type="text" value="${inscription.student_surname || ''}" class="student-surname border border-gray-300 rounded-md px-3 py-2 w-full" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                                <select class="student-course border border-gray-300 rounded-md px-3 py-2 w-full">
+                                    <option value="I3" ${inscription.student_course === 'I3' ? 'selected' : ''}>I3</option>
+                                    <option value="I4" ${inscription.student_course === 'I4' ? 'selected' : ''}>I4</option>
+                                    <option value="I5" ${inscription.student_course === 'I5' ? 'selected' : ''}>I5</option>
+                                    <option value="1PRI" ${inscription.student_course === '1PRI' ? 'selected' : ''}>1º Primaria</option>
+                                    <option value="2PRI" ${inscription.student_course === '2PRI' ? 'selected' : ''}>2º Primaria</option>
+                                    <option value="3PRI" ${inscription.student_course === '3PRI' ? 'selected' : ''}>3º Primaria</option>
+                                    <option value="4PRI" ${inscription.student_course === '4PRI' ? 'selected' : ''}>4º Primaria</option>
+                                    <option value="5PRI" ${inscription.student_course === '5PRI' ? 'selected' : ''}>5º Primaria</option>
+                                    <option value="6PRI" ${inscription.student_course === '6PRI' ? 'selected' : ''}>6º Primaria</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
+                                <div class="space-y-2">
+                                    ${getAvailableActivities().map(activity => `
+                                        <label class="flex items-center">
+                                            <input type="checkbox" value="${activity}" 
+                                                   ${inscription.activities && inscription.activities.includes(activity) ? 'checked' : ''}
+                                                   class="student-activity mr-2" />
+                                            <span class="text-sm">${activity}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-800 mb-2">Información del Padre/Madre</h4>
+                        <p><strong>Nombre:</strong> ${inscription.parent_name || 'N/A'}</p>
+                        <p><strong>Teléfono:</strong> ${inscription.parent_phone_1 || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${inscription.parent_email_1 || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Estudiantes</h4>
+                        <div id="students-container" class="space-y-4">
+                            ${studentsHtml}
+                        </div>
+                        <button onclick="addNewStudent()" class="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            + Agregar Nuevo Estudiante
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function getAvailableActivities() {
+            const activities = new Set();
+            allInscriptions.forEach(ins => {
+                if (ins.students && Array.isArray(ins.students)) {
+                    ins.students.forEach(student => {
+                        if (student.activities && Array.isArray(student.activities)) {
+                            student.activities.forEach(activity => activities.add(activity));
+                        }
+                    });
+                } else if (ins.activities && Array.isArray(ins.activities)) {
+                    ins.activities.forEach(activity => activities.add(activity));
+                }
+            });
+            return Array.from(activities).sort();
+        }
+
+        function toggleStudentStatus(index) {
+            const studentsContainer = document.getElementById('students-container');
+            const studentElement = studentsContainer.querySelector(`[data-student-index="${index}"]`);
+            
+            if (studentElement) {
+                const statusCheckbox = studentElement.querySelector('.student-status');
+                const toggleButton = studentElement.querySelector('button[onclick*="toggleStudentStatus"]');
+                const isCurrentlyActive = statusCheckbox.checked;
+                
+                // Verificar que no se suspenda el último estudiante activo
+                if (isCurrentlyActive) {
+                    const activeStudents = studentsContainer.querySelectorAll('.student-status:checked');
+                    if (activeStudents.length <= 1) {
+                        showError('No se puede suspender el último estudiante activo. Debe haber al menos uno activo.');
+                        return;
+                    }
+                }
+                
+                // Cambiar el estado
+                statusCheckbox.checked = !isCurrentlyActive;
+                
+                // Actualizar el botón y el estilo
+                if (isCurrentlyActive) {
+                    toggleButton.textContent = 'Reactivar';
+                    toggleButton.className = 'text-green-600 hover:text-green-800 text-sm font-medium';
+                    studentElement.style.opacity = '0.6';
+                    studentElement.style.backgroundColor = '#fef3c7'; // Amarillo claro para suspendido
+                    studentElement.style.borderColor = '#f59e0b'; // Borde naranja
+                } else {
+                    toggleButton.textContent = 'Suspender';
+                    toggleButton.className = 'text-orange-600 hover:text-orange-800 text-sm font-medium';
+                    studentElement.style.opacity = '1';
+                    studentElement.style.backgroundColor = '';
+                    studentElement.style.borderColor = '';
+                }
+            }
+        }
+
+        function addNewStudent() {
+            const studentsContainer = document.getElementById('students-container');
+            const currentCount = studentsContainer.querySelectorAll('[data-student-index]').length;
+            const newIndex = currentCount;
+            
+            const newStudentHtml = `
+                <div class="border border-gray-200 rounded-lg p-4" data-student-index="${newIndex}">
+                    <div class="flex justify-between items-start mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800">Alumno/a ${newIndex + 1}</h4>
+                        <div class="flex space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" checked class="student-status mr-2" />
+                                <span class="text-sm font-medium">Activo</span>
+                            </label>
+                            <button onclick="toggleStudentStatus(${newIndex})" 
+                                    class="text-orange-600 hover:text-orange-800 text-sm font-medium">
+                                Suspender
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                            <input type="text" class="student-name border border-gray-300 rounded-md px-3 py-2 w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                            <input type="text" class="student-surname border border-gray-300 rounded-md px-3 py-2 w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                            <select class="student-course border border-gray-300 rounded-md px-3 py-2 w-full">
+                                <option value="I3">I3</option>
+                                <option value="I4">I4</option>
+                                <option value="I5">I5</option>
+                                <option value="1PRI">1º Primaria</option>
+                                <option value="2PRI">2º Primaria</option>
+                                <option value="3PRI">3º Primaria</option>
+                                <option value="4PRI">4º Primaria</option>
+                                <option value="5PRI">5º Primaria</option>
+                                <option value="6PRI">6º Primaria</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
+                            <div class="space-y-2">
+                                ${getAvailableActivities().map(activity => `
+                                    <label class="flex items-center">
+                                        <input type="checkbox" value="${activity}" class="student-activity mr-2" />
+                                        <span class="text-sm">${activity}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            studentsContainer.insertAdjacentHTML('beforeend', newStudentHtml);
+        }
+
+        function reindexStudents() {
+            const studentsContainer = document.getElementById('students-container');
+            const students = studentsContainer.querySelectorAll('[data-student-index]');
+            
+            students.forEach((student, index) => {
+                student.setAttribute('data-student-index', index);
+                student.querySelector('h4').textContent = `Alumno/a ${index + 1}`;
+                student.querySelector('button').setAttribute('onclick', `removeStudent(${index})`);
+            });
+        }
+
+        async function saveInscriptionChanges() {
+            if (!currentEditingInscription) return;
+
+            const studentsContainer = document.getElementById('students-container');
+            const students = studentsContainer.querySelectorAll('[data-student-index]');
+            
+            if (students.length === 0) {
+                showError('Debe haber al menos un estudiante en la inscripción.');
+                return;
+            }
+
+            const updatedStudents = [];
+            
+            students.forEach(studentElement => {
+                const name = studentElement.querySelector('.student-name').value.trim();
+                const surname = studentElement.querySelector('.student-surname').value.trim();
+                const course = studentElement.querySelector('.student-course').value;
+                const activities = Array.from(studentElement.querySelectorAll('.student-activity:checked'))
+                    .map(checkbox => checkbox.value);
+                const isActive = studentElement.querySelector('.student-status').checked;
+
+                if (name && surname && course) {
+                    updatedStudents.push({
+                        name,
+                        surname,
+                        course,
+                        activities,
+                        suspended: !isActive
+                    });
+                }
+            });
+
+            if (updatedStudents.length === 0) {
+                showError('Todos los estudiantes deben tener nombre, apellidos y curso completados.');
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('inscripcions')
+                    .update({ students: updatedStudents })
+                    .eq('id', currentEditingInscription.id);
+
+                if (error) throw error;
+
+                // Actualizar datos locales
+                const index = allInscriptions.findIndex(ins => ins.id === currentEditingInscription.id);
+                if (index !== -1) {
+                    allInscriptions[index].students = updatedStudents;
+                    filteredInscriptions = [...allInscriptions];
+                }
+
+                updateStats();
+                renderTable();
+                document.getElementById('edit-modal').classList.add('hidden');
+                showSuccess('Inscripción actualizada correctamente');
+            } catch (error) {
+                console.error('Error updating inscription:', error);
+                showError('Error al actualizar la inscripción: ' + error.message);
+            }
+        }
 
         function logout() {
             if (confirm('¿Estás seguro de que quieres cerrar la sesión?')) {
