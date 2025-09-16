@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-lang="page_title">Formulari Preinscripció Extraescolars 2025-26 | AFA Escola Falguera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .lang-btn.active {
+            font-weight: bold;
+            color: #1d4ed8; /* text-blue-800 */
+            background-color: #eff6ff; /* bg-blue-50 */
+            border: 2px solid #3b82f6; /* border-blue-500 */
+        }
+        .lang-btn {
+            border: 2px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        /* Modal styles */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-container {
+            transition: transform 0.3s ease;
+        }
+        /* New Activity Card Styles */
+        .activity-card {
+            transition: all 0.2s ease-in-out;
+            border: 2px solid #e5e7eb; /* border-gray-200 */
+        }
+        .activity-card.selected {
+            border-color: #3b82f6; /* border-blue-500 */
+            background-color: #eff6ff; /* bg-blue-50 */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .activity-card input[type="checkbox"] {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+        
+        <div class="flex justify-end items-center mb-4">
+            <div class="text-right">
+                <button id="lang-ca" class="lang-btn active p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <span class="text-2xl">🇪🇸</span>
+                    <span class="text-sm font-medium">Català</span>
+                </button>
+                <button id="lang-es" class="lang-btn text-gray-600 p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <span class="text-2xl">🇪🇸</span>
+                    <span class="text-sm font-medium">Español</span>
+                </button>
+            </div>
+        </div>
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-blue-800" data-lang="main_header">AFA Escola Falguera</h1>
+            <p class="text-lg sm:text-xl text-gray-600 mt-2" data-lang="main_subheader">Formulari de Preinscripció per a Activitats Extraescolars 2025-26</p>
+        </header>
+
+        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg mb-8 text-center">
+            <p class="font-semibold" data-lang="important_info_title">Informació important:</p>
+            <p class="text-sm" data-lang="important_info_body">Les activitats ofertes només es duran a terme si hi ha un nombre suficient d'alumnes. En cas que el nombre d'inscrits superi l'aforament màxim, es tindrà en compte l'ordre d'inscripció.</p>
+        </div>
+
+        <!-- Main Form -->
+        <form id="inscription-form" class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg space-y-8">
+            
+            <!-- Pricing Section -->
+             <fieldset>
+                <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="pricing_legend">Preus i Mètode de Pagament</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-semibold" data-lang="pricing_general_title">Activitats Generals</h4>
+                        <p class="text-sm text-gray-500" data-lang="pricing_general_hours">16:30h a 18:00h</p>
+                        <p class="mt-2"><span class="font-bold text-lg text-blue-700">20€</span> <span data-lang="pricing_socis">/mes socis</span></p>
+                        <p><span class="font-bold text-lg text-gray-700">25€</span> <span data-lang="pricing_no_socis">/mes no socis</span></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-semibold" data-lang="pricing_timbals_title">Timbals</h4>
+                        <p class="text-sm text-gray-500 invisible">_</p>
+                        <p class="mt-2"><span class="font-bold text-lg text-blue-700">14€</span> <span data-lang="pricing_socis">/mes socis</span></p>
+                        <p><span class="font-bold text-lg text-gray-700">18€</span> <span data-lang="pricing_no_socis">/mes no socis</span></p>
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                    <p><strong data-lang="pricing_discount_title">Descompte:</strong> <span data-lang="pricing_discount_body">Si es realitzen dues extraescolars iguals a la mateixa setmana, el preu final seria 36€ mensuals per a socis, i 40€ mensuals per a NO socis.</span></p>
+                </div>
+
+                <!-- Payment Info -->
+                <div class="mt-6 bg-green-50 border border-green-200 p-4 rounded-lg">
+                    <h4 class="font-semibold text-green-800" data-lang="payment_info_title">Informació de Pagament</h4>
+                    <p class="text-sm text-green-700 mt-2" data-lang="payment_info_body">Totes les activitats són de pagament mensual per transferència bancària abans del dia 10 del mes en curs.</p>
+                    <div class="mt-3 flex flex-wrap items-center bg-white p-2 rounded-md border">
+                        <span class="font-mono text-gray-800 flex-grow" id="iban-account">ES22 0081 1604 7400 0103 8208</span>
+                        <button type="button" id="copy-iban-btn" class="ml-4 bg-green-600 text-white px-3 py-1 text-xs font-semibold rounded-md hover:bg-green-700 transition-colors" data-lang="payment_copy_iban">Copiar IBAN</button>
+                    </div>
+                    <p class="text-xs text-red-600 font-semibold mt-2" data-lang="payment_info_concept">Important! Indicar al concepte el nom de l'alumne/a i l'activitat.</p>
+                </div>
+            </fieldset>
+
+            <!-- Student Data -->
+            <fieldset>
+                <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="student_data_legend">Dades de l'Alumne/a</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="student-name" class="block text-sm font-medium text-gray-700" data-lang="student_name">Nom</label>
+                        <input type="text" id="student-name" name="student_name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="student-surname" class="block text-sm font-medium text-gray-700" data-lang="student_surname">Cognoms</label>
+                        <input type="text" id="student-surname" name="student_surname" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="student-course" class="block text-sm font-medium text-gray-700" data-lang="student_course">Curs <span class="text-red-500">*</span></label>
+                        <select id="student-course" name="student_course" required class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="" disabled selected data-lang="select_course">Selecciona un curs</option>
+                            <option value="I3">I3</option><option value="I4">I4</option><option value="I5">I5</option>
+                            <option value="1PRI" data-lang="course_1pri">1r Primària</option><option value="2PRI" data-lang="course_2pri">2n Primària</option><option value="3PRI" data-lang="course_3pri">3r Primària</option>
+                            <option value="4PRI" data-lang="course_4pri">4t Primària</option><option value="5PRI" data-lang="course_5pri">5è Primària</option><option value="6PRI" data-lang="course_6pri">6è Primària</option>
+                        </select>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Activities Section -->
+            <fieldset>
+                <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="activities_legend">Activitats Extraescolars</legend>
+                <p class="text-sm text-gray-600 mb-4" data-lang="activities_subtitle">Selecciona les activitats desitjades (mínim una). Les opcions apareixeran quan triïs un curs.</p>
+                <div id="activities-infantil" class="form-section space-y-4">
+                    <h4 class="font-semibold text-gray-800" data-lang="infantil_options">Opcions per a Infantil (I3-I5)</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
+                </div>
+                <div id="activities-primaria1" class="form-section space-y-4">
+                    <h4 class="font-semibold text-gray-800" data-lang="primaria1_options">Opcions per a 1r, 2n i 3r de Primària</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
+                </div>
+                <div id="activities-primaria2" class="form-section space-y-4">
+                    <h4 class="font-semibold text-gray-800" data-lang="primaria2_options">Opcions per a 4t, 5è i 6è de Primària</h4>
+                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
+                </div>
+            </fieldset>
+
+            <!-- Parent/Guardian Data -->
+            <fieldset>
+                <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="parent_data_legend">Dades del Pare/Mare/Tutor/a</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="parent-name" class="block text-sm font-medium text-gray-700" data-lang="parent_name">Nom i Cognoms</label>
+                        <input type="text" id="parent-name" name="parent_name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                     <div>
+                        <label for="parent-dni" class="block text-sm font-medium text-gray-700" data-lang="parent_dni">DNI/NIF</label>
+                        <input type="text" id="parent-dni" name="parent_dni" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="parent-phone-1" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_1">Telèfon de Contacte 1 <span class="text-red-500">*</span></label>
+                        <input type="tel" id="parent-phone-1" name="parent_phone_1" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="parent-phone-2" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_2">Telèfon de Contacte 2 <span class="text-gray-400" data-lang="optional">(Opcional)</span></label>
+                        <input type="tel" id="parent-phone-2" name="parent_phone_2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="parent-email-1" class="block text-sm font-medium text-gray-700" data-lang="parent_email_1">Email de Contacte 1 <span class="text-red-500">*</span></label>
+                        <input type="email" id="parent-email-1" name="parent_email_1" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="parent-email-2" class="block text-sm font-medium text-gray-700" data-lang="parent_email_2">Email de Contacte 2 <span class="text-gray-400" data-lang="optional">(Opcional)</span></label>
+                        <input type="email" id="parent-email-2" name="parent_email_2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700" data-lang="afa_member_question">Sou socis de l'AFA? <span class="text-red-500">*</span></label>
+                        <div class="mt-2 flex items-center space-x-4">
+                            <label class="flex items-center"><input type="radio" name="afa_member" value="true" required class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="yes">Sí</span></label>
+                            <label class="flex items-center"><input type="radio" name="afa_member" value="false" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="no">No</span></label>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Health & Authorizations -->
+            <fieldset>
+                 <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="auth_legend">Informació Addicional i Autoritzacions</legend>
+                 <div>
+                    <label for="health-info" class="block text-sm font-medium text-gray-700" data-lang="health_question">L'alumne/a té alguna malaltia crònica, al·lèrgia o pren medicació?</label>
+                    <textarea id="health-info" name="health_info" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" data-lang-placeholder="health_placeholder"></textarea>
+                 </div>
+                 
+                 <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700">
+                        <span data-lang="image_auth_title">Autorització de drets d'imatge</span> <span class="text-red-500">*</span>
+                        <button type="button" id="image-info-btn" class="ml-2 text-blue-600 hover:text-blue-800 font-bold">(i)</button>
+                    </label>
+                    <p class="text-xs text-gray-500 mb-2" data-lang="image_auth_subtitle">Per a l'ús d'imatges en fotografies i/o vídeos realitzats per l'AFA amb la finalitat d'exposar-les a la nostra web i xarxes socials.</p>
+                    <div class="mt-2 flex items-center space-x-4">
+                        <label class="flex items-center"><input type="radio" name="image_auth_consent" value="si" required class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="image_auth_yes">Sí, autoritzo el tractament de la imatge.</span></label>
+                        <label class="flex items-center"><input type="radio" name="image_auth_consent" value="no" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="image_auth_no">No, no autoritzo el tractament de la imatge.</span></label>
+                    </div>
+                 </div>
+
+                 <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700" data-lang="exit_auth_title">Autorització de sortida de l'activitat <span class="text-red-500">*</span></label>
+                     <div class="mt-2">
+                         <p class="text-sm text-gray-700 mb-2" data-lang="exit_auth_question">L'alumne/a pot marxar sol/sola en finalitzar l'activitat extraescolar?</p>
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center"><input type="radio" name="can_leave_alone" value="true" required class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="yes">Sí</span></label>
+                            <label class="flex items-center"><input type="radio" name="can_leave_alone" value="false" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="no">No</span></label>
+                        </div>
+                     </div>
+                     <div class="mt-4">
+                        <label for="authorized_pickup" class="block text-sm font-medium text-gray-700" data-lang="authorized_pickup_label">Persones autoritzades a recollir l'infant (Nom, Cognoms i DNI)</label>
+                        <textarea id="authorized_pickup" name="authorized_pickup" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" data-lang-placeholder="authorized_pickup_placeholder"></textarea>
+                     </div>
+                 </div>
+
+                 <div class="mt-6 space-y-4">
+                    <div class="flex items-start">
+                        <input id="conditions-accepted" name="conditions_accepted" type="checkbox" required class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1">
+                        <label for="conditions-accepted" class="ml-3 block text-sm text-gray-700"><span data-lang="conditions_accepted_label">He llegit i accepto les</span> <button type="button" id="conditions-btn" class="text-blue-600 hover:underline font-medium" data-lang="conditions_link">condicions de les extraescolars i acollida</button>. <span class="text-red-500">*</span></label>
+                    </div>
+                 </div>
+            </fieldset>
+            
+            <!-- Submission -->
+            <div class="pt-4">
+                <button type="submit" id="submit-button" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
+                    <span id="submit-text" data-lang="submit_button">Enviar Preinscripció</span>
+                    <div id="submit-loader" class="loader hidden"></div>
+                </button>
+            </div>
+        </form>
+
+        <!-- Status Messages -->
+        <div id="status-message" class="mt-6 text-center"></div>
+    </div>
+
+    <!-- Modal Structure -->
+    <div id="info-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 modal-overlay hidden opacity-0">
+        <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-2xl modal-container transform scale-95">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <h3 id="modal-title" class="text-2xl font-semibold text-gray-900"></h3>
+                    <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div id="modal-content" class="mt-4 text-sm text-gray-600 space-y-3 max-h-[60vh] overflow-y-auto">
+                    <!-- Content will be injected by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const { createClient } = supabase;
+        let supabaseClient;
+        let currentLang = 'ca';
+
+        // =================================================================================
+        // == PAS 1: CONFIGURACIÓ DE SUPABASE                                             ==
+        // == Enganxa aquí la teva URL i la teva Anon Key de Supabase.                    ==
+        // == Aquestes dades les trobaràs a 'Project Settings' > 'API' del teu projecte.  ==
+        // =================================================================================
+        const SUPABASE_URL = "https://zaxbtnjkidqwzqsehvld.supabase.co"; // <-- ENGANXA AQUÍ LA TEVA URL
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGJ0bmpraWRxd3pxc2VodmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMjc2NTMsImV4cCI6MjA3MzYwMzY1M30.9MNjQdeLvW_UaxZz0XQmR6jQSakzF-UzBWvdboWWHRg"; // <-- ENGANXA AQUÍ LA TEVA ANON KEY
+
+
+        const allActivities = {
+             infantil: [
+                { value: "Multiesport Anglès (Dilluns)", langKey: 'activity_multiesport_dl', dayLangKey: 'day_dl', schedule: '16:30 - 18:00' },
+                { value: "Jocs amb Anglès (Dimarts)", langKey: 'activity_jocs_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
+                { value: "Jocs amb Anglès (Dimecres)", langKey: 'activity_jocs_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
+                { value: "Multiesport Anglès (Dijous)", langKey: 'activity_multiesport_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
+                { value: "Iniciació a Timbals (Divendres)", langKey: 'activity_timbals_iniciacio_dv', dayLangKey: 'day_dv', schedule: '16:30 - 18:00' },
+            ],
+            primaria1: [
+                { value: "Teatre amb Anglès (Dilluns)", langKey: 'activity_teatre_dl', dayLangKey: 'day_dl', schedule: '16:30 - 18:00' },
+                { value: "Hip Hop (Dilluns)", langKey: 'activity_hiphop_dl', dayLangKey: 'day_dl', schedule: '16:30 - 18:00' },
+                { value: "Futbol (Dimarts)", langKey: 'activity_futbol_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
+                { value: "Anglès (Dimecres)", langKey: 'activity_angles_dc', dayLangKey: 'day_dc', schedule: '16:30 - 17:45' },
+                { value: "Teatre amb Anglès (Dimecres)", langKey: 'activity_teatre_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00'},
+                { value: "Patinatge (Dimecres)", langKey: 'activity_patinatge_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
+                { value: "Basket (Dimecres)", langKey: 'activity_basket_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
+                { value: "Futbol (Dijous)", langKey: 'activity_futbol_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
+                { value: "Iniciació Timbals (Divendres)", langKey: 'activity_timbals_iniciacio_dv', dayLangKey: 'day_dv', schedule: '16:30 - 18:00' },
+                { value: "Timbals (Divendres)", langKey: 'activity_timbals_dv', dayLangKey: 'day_dv', schedule: '16:30 - 18:00' },
+            ],
+            primaria2: [
+                { value: "Teatre amb Anglès (Dilluns)", langKey: 'activity_teatre_dl', dayLangKey: 'day_dl', schedule: '16:30 - 18:00' },
+                { value: "Hip Hop (Dilluns)", langKey: 'activity_hiphop_dl', dayLangKey: 'day_dl', schedule: '16:30 - 18:00' },
+                { value: "Anglès (Dimarts)", langKey: 'activity_angles_dt', dayLangKey: 'day_dt', schedule: '16:30 - 17:45' },
+                { value: "Futbol (Dimarts)", langKey: 'activity_futbol_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
+                { value: "Teatre amb Anglès (Dimecres)", langKey: 'activity_teatre_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
+                { value: "Patinatge (Dimecres)", langKey: 'activity_patinatge_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
+                { value: "Basket (Dimecres)", langKey: 'activity_basket_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
+                { value: "Futbol (Dijous)", langKey: 'activity_futbol_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
+                { value: "Timbals (Divendres)", langKey: 'activity_timbals_dv', dayLangKey: 'day_dv', schedule: '16:30 - 18:00' },
+            ]
+        };
+
+        const translations = {
+            ca: {
+                page_title: "Formulari Preinscripció Extraescolars 2025-26 | AFA Escola Falguera",
+                main_header: "AFA Escola Falguera",
+                main_subheader: "Formulari de Preinscripció per a Activitats Extraescolars 2025-26",
+                important_info_title: "Informació important:",
+                important_info_body: "Les activitats ofertes només es duran a terme si hi ha un nombre suficient d'alumnes. En cas que el nombre d'inscrits superi l'aforament màxim, es tindrà en compte l'ordre d'inscripció.",
+                pricing_legend: "Preus i Mètode de Pagament",
+                pricing_general_title: "Activitats Generals",
+                pricing_general_hours: "16:30h a 18:00h",
+                pricing_socis: "/mes socis",
+                pricing_no_socis: "/mes no socis",
+                pricing_timbals_title: "Timbals",
+                pricing_discount_title: "Descompte:",
+                pricing_discount_body: "Si es realitzen dues extraescolars iguals a la mateixa setmana, el preu final seria 36€ mensuals per a socis, i 40€ mensuals per a NO socis.",
+                payment_info_title: "Informació de Pagament",
+                payment_info_body: "Totes les activitats són de pagament mensual per transferència bancària abans del dia 10 del mes en curs.",
+                payment_copy_iban: "Copiar IBAN",
+                payment_copied_iban: "Copiat!",
+                payment_info_concept: "Important! Indicar al concepte el nom de l'alumne/a i l'activitat.",
+                student_data_legend: "Dades de l'Alumne/a",
+                student_name: "Nom",
+                student_surname: "Cognoms",
+                student_course: "Curs",
+                select_course: "Selecciona un curs",
+                course_1pri: "1r Primària", course_2pri: "2n Primària", course_3pri: "3r Primària", course_4pri: "4t Primària", course_5pri: "5è Primària", course_6pri: "6è Primària",
+                activities_legend: "Activitats Extraescolars",
+                activities_subtitle: "Selecciona les activitats desitjades (mínim una). Les opcions apareixeran quan triïs un curs.",
+                infantil_options: "Opcions per a Infantil (I3-I5)",
+                primaria1_options: "Opcions per a 1r, 2n i 3r de Primària",
+                primaria2_options: "Opcions per a 4t, 5è i 6è de Primària",
+                activity_multiesport_dl: "Multiesport Anglès", activity_multiesport_dj: "Multiesport Anglès", activity_jocs_dm: "Jocs amb Anglès", activity_jocs_dc: "Jocs amb Anglès", activity_timbals_iniciacio_dv: "Iniciació a Timbals",
+                activity_teatre_dl: "Teatre amb Anglès", activity_hiphop_dl: "Hip Hop", activity_futbol_dm: "Futbol", activity_patinatge_dc: "Patinatge", activity_basket_dc: "Bàsquet", activity_futbol_dj: "Futbol", activity_timbals_dv: "Timbals", activity_teatre_dc: "Teatre amb Anglès", activity_angles_dt: "Anglès", activity_angles_dc: "Anglès",
+                day_dl: "Dilluns", day_dt: "Dimarts", day_dc: "Dimecres", day_dj: "Dijous", day_dv: "Divendres",
+                parent_data_legend: "Dades del Pare/Mare/Tutor/a",
+                parent_name: "Nom i Cognoms", parent_dni: "DNI/NIF", parent_phone_1: "Telèfon de Contacte 1", parent_phone_2: "Telèfon de Contacte 2", parent_email_1: "Email de Contacte 1", parent_email_2: "Email de Contacte 2",
+                optional: "(Opcional)",
+                afa_member_question: "Sou socis de l'AFA?",
+                yes: "Sí", no: "No",
+                auth_legend: "Informació Addicional i Autoritzacions",
+                health_question: "L'alumne/a té alguna malaltia crònica, al·lèrgia o pren medicació?",
+                health_placeholder: "Si no hi ha res a indicar, deixa-ho en blanc.",
+                image_auth_title: "Autorització de drets d'imatge",
+                image_auth_subtitle: "Per a l'ús d'imatges en fotografies i/o vídeos realitzats per l'AFA amb la finalitat d'exposar-les a la nostra web i xarxes socials.",
+                image_auth_yes: "Sí, autoritzo el tractament de la imatge.", image_auth_no: "No, no autoritzo el tractament de la imatge.",
+                exit_auth_title: "Autorització de sortida de l'activitat",
+                exit_auth_question: "L'alumne/a pot marxar sol/sola en finalitzar l'activitat extraescolar?",
+                authorized_pickup_label: "Persones autoritzades a recollir l'infant (Nom, Cognoms i DNI)",
+                authorized_pickup_placeholder: "Si pot marxar sol/a, o només el recullen els tutors legals, deixa aquest camp en blanc.",
+                conditions_accepted_label: "He llegit i accepto les",
+                conditions_link: "condicions de les extraescolars i acollida",
+                submit_button: "Enviar Preinscripció",
+                status_success: "Preinscripció enviada correctament! Gràcies.",
+                status_error_supabase_credentials: "Error de configuració. Contacta amb l'administrador.",
+                status_error_activity_required: "Has de seleccionar almenys una activitat extraescolar.",
+                status_error_generic: "Error en enviar el formulari: {error}. Si us plau, intenta-ho de nou més tard.",
+                image_auth_modal_title: "Informació sobre Drets d'Imatge",
+                image_auth_modal_content: `<p>En compliment de la Llei Orgànica 1/1982, del 5 de maig, sobre el dret a l’honor, a la intimitat personal i familiar i a la pròpia imatge demanem autorització als pares o tutors legals dels menors d’edat per a l’ús de la imatge obtinguda amb fotografies i/o vídeos realitzats per la nostra entitat amb la finalitat d’exposar-les a la nostra web, al facebook i instagram.</p><p>Sol·licitem el consentiment i autorització a l’AFA Escola Falguera, a fer ús de la imatges obtingudes durant la seva participació en les activitats extraescolars, publicades a la pagina web o xarxes socials.</p><p>A partir de la signatura d’aquest formulari vostè autoritza expressament el tractament de les seves dades de caràcter personal, per a la finalitat especificada, per part de l'AFA Escola Falguera.</p>`,
+                conditions_modal_title: "Condicions de les Extraescolars i Acollida",
+                conditions_modal_content: `<div class="space-y-3">
+                    <h4 class="font-bold text-base">Preus i Pagament</h4>
+                    <ul class="list-disc list-inside text-sm">
+                        <li>Activitats Generals (16:30h a 18:00h): <strong>20€/mes socis</strong>, <strong>25€/mes no socis</strong>.</li>
+                        <li>Timbals: <strong>14€/mes socis</strong>, <strong>18€/mes no socis</strong>.</li>
+                        <li>Descompte 2 activitats/setmana (mateixa activitat): <strong>36€/mes socis</strong>, <strong>40€/mes no socis</strong>.</li>
+                        <li>El pagament és mensual, per transferència bancària al compte <strong>ES22.0081.1604.7400.0103.8208</strong> abans del dia 10 del mes.</li>
+                        <li class="font-semibold text-red-600">Important: Indicar al concepte el nom de l'alumne/a i l'activitat.</li>
+                    </ul>
+                    <h4 class="font-bold text-base pt-2">Condicions Generals</h4>
+                    <ol class="list-decimal list-inside space-y-2 text-sm">
+                    <li>Per poder accedir a les extraescolars o acollida amb el preu de soci, heu d'estar al corrent del pagament de la quota de l'AFA.</li>
+                    <li>La inscripció de l'alumne en l'activitat es formalitzarà lliurant el formulari d'inscripció directament a l'AFA, o bé per correu electrònic a ampafalguera@hotmail.es, degudament emplenat i signat, conjuntament amb la declaració responsable.</li>
+                    <li>A partir de setembre les sol·licituts d'alta i de baixa de les activitats proposades hauran de lliurar-se a l'AFA abans del dia 20 del mes en curs (una vegada depassat aquest termini, la baixa NO serà efectiva fins al mes següent i s'haurà d'abonar la quota corresponent). Es poden enviar via e-mail o presencialment a la oficina de l'AFA.</li>
+                    <li>Totes les activitats son de pagament mensual, amb transferència bancària al compte del Banc Sabadell ES22.0081.1604.7400.0103.8208 abans del dia 10 del mes en curs. Important! Indicar al concepte nom de l'alumne i activitat.</li>
+                    <li>Si no hi hagués un nombre mínim d'alumnes, l'activitat no es podrà realitzar i s'oferiran alternatives en la mesura que sigui possible.</li>
+                    <li>Si les sol·licituts superen el nombre de places ofertes, es tindrà en compte l'ordre d'inscripció.</li>
+                    <li>No es descomptarà del preu ni es recuperarà la no assistència dels alumnes, ni els dies de vacances i festius segons el calendari escolar. No obstant això, si són recuperables els dies de classe no impartits per causes atribuïbles a l'empresa d'extraescolars.</li>
+                    <li>Els impagaments que es produeixin causaran la baixa de l'alumne en totes les activitats extraescolars.</li>
+                    <li>És obligació dels pares/tutors advertir al formulari d'inscripció de qualsevol malaltia, al·lèrgia o intolerància que l'alumne pogués patir.</li>
+                    <li>Les persones autoritzades per recollir a l'alumne de las extraescolars o acollida, seran el pares/mares/tutors/es i persones autoritzades que figuren al formulari d'inscripció.</li>
+                    <li>S'ha de respectar tan a la persona responsable de l'activitat, com als companys i companyes, materials i infraestructures. De no ser així, l'AFA podrà decidir juntament amb l'empresa d'extraescolars, si algú ha d'abandonar el grup, a fi de preservar la bona marxa i el bon funcionament de l'activitat.</li>
+                    <li>Els usuaris de beques confirmades, hauran d'informar a l'AFA marcant la casella al formulari d'incripció, i lliurant el document corresponent.</li>
+                    <li>Les preinscripcions es faran del 10 al 14 de juny i del 10 al 20 de setembre.</li>
+                </ol></div>`
+            },
+            es: {
+                page_title: "Formulario Preinscripción Extraescolares 2025-26 | AFA Escola Falguera",
+                main_header: "AFA Escola Falguera",
+                main_subheader: "Formulario de Preinscripción para Actividades Extraescolares 2025-26",
+                important_info_title: "Información importante:",
+                important_info_body: "Las actividades ofrecidas solo se llevarán a cabo si hay un número suficiente de alumnos. En caso de que el número de inscritos supere el aforo máximo, se tendrá en cuenta el orden de inscripción.",
+                pricing_legend: "Precios y Método de Pago",
+                pricing_general_title: "Actividades Generales",
+                pricing_general_hours: "16:30h a 18:00h",
+                pricing_socis: "/mes socios",
+                pricing_no_socis: "/mes no socios",
+                pricing_timbals_title: "Timbales",
+                pricing_discount_title: "Descuento:",
+                pricing_discount_body: "Si se realizan dos extraescolares iguales en la misma semana, el precio final sería 36€ mensuales para socios, y 40€ mensuales para NO socios.",
+                payment_info_title: "Información de Pago",
+                payment_info_body: "Todas las actividades son de pago mensual por transferencia bancaria antes del día 10 del mes en curso.",
+                payment_copy_iban: "Copiar IBAN",
+                payment_copied_iban: "¡Copiado!",
+                payment_info_concept: "¡Importante! Indicar en el concepto el nombre del alumno/a y la actividad.",
+                student_data_legend: "Datos del Alumno/a",
+                student_name: "Nombre", student_surname: "Apellidos", student_course: "Curso",
+                select_course: "Selecciona un curso",
+                course_1pri: "1º Primaria", course_2pri: "2º Primaria", course_3pri: "3º Primaria", course_4pri: "4º Primaria", course_5pri: "5º Primaria", course_6pri: "6º Primaria",
+                activities_legend: "Actividades Extraescolares",
+                activities_subtitle: "Selecciona las actividades deseadas (mínimo una). Las opciones aparecerán al elegir un curso.",
+                infantil_options: "Opciones para Infantil (I3-I5)",
+                primaria1_options: "Opciones para 1º, 2º y 3º de Primaria",
+                primaria2_options: "Opciones para 4º, 5º y 6º de Primaria",
+                activity_multiesport_dl: "Multideporte Inglés", activity_multiesport_dj: "Multideporte Inglés", activity_jocs_dm: "Juegos con Inglés", activity_jocs_dc: "Juegos con Inglés", activity_timbals_iniciacio_dv: "Iniciación a Timbales",
+                activity_teatre_dl: "Teatro con Inglés", activity_hiphop_dl: "Hip Hop", activity_futbol_dm: "Fútbol", activity_patinatge_dc: "Patinaje", activity_basket_dc: "Baloncesto", activity_futbol_dj: "Fútbol", activity_timbals_dv: "Timbales", activity_teatre_dc: "Teatro con Inglés", activity_angles_dt: "Inglés", activity_angles_dc: "Inglés",
+                day_dl: "Lunes", day_dt: "Martes", day_dc: "Miércoles", day_dj: "Jueves", day_dv: "Viernes",
+                parent_data_legend: "Datos del Padre/Madre/Tutor/a",
+                parent_name: "Nombre y Apellidos", parent_dni: "DNI/NIF", parent_phone_1: "Teléfono de Contacto 1", parent_phone_2: "Teléfono de Contacto 2", parent_email_1: "Email de Contacto 1", parent_email_2: "Email de Contacto 2",
+                optional: "(Opcional)",
+                afa_member_question: "¿Sois socios del AFA?",
+                yes: "Sí", no: "No",
+                auth_legend: "Información Adicional y Autorizaciones",
+                health_question: "¿El/la alumno/a tiene alguna enfermedad crónica, alergia o toma medicación?",
+                health_placeholder: "Si no hay nada que indicar, déjalo en blanco.",
+                image_auth_title: "Autorización de derechos de imagen",
+                image_auth_subtitle: "Para el uso de imágenes en fotografías y/o vídeos realizados por el AFA con el fin de exponerlas en nuestra web y redes sociales.",
+                image_auth_yes: "Sí, autorizo el tratamiento de la imagen.", image_auth_no: "No, no autorizo el tratamiento de la imagen.",
+                exit_auth_title: "Autorización de salida de la actividad",
+                exit_auth_question: "¿El/la alumno/a puede irse solo/a al finalizar la actividad extraescolar?",
+                authorized_pickup_label: "Personas autorizadas a recoger al niño/a (Nombre, Apellidos y DNI)",
+                authorized_pickup_placeholder: "Si puede irse solo/a, o solo lo recogen los tutores legales, deja este campo en blanco.",
+                conditions_accepted_label: "He leído y acepto las",
+                conditions_link: "condiciones de las extraescolares y acogida",
+                submit_button: "Enviar Preinscripción",
+                status_success: "¡Preinscripción enviada correctamente! Gracias.",
+                status_error_supabase_credentials: "Error de configuración. Contacta con el administrador.",
+                status_error_activity_required: "Debes seleccionar al menos una actividad extraescolar.",
+                status_error_generic: "Error al enviar el formulario: {error}. Por favor, inténtalo de nuevo más tarde.",
+                image_auth_modal_title: "Información sobre Derechos de Imagen",
+                image_auth_modal_content: `<p>En cumplimiento de la Ley Orgánica 1/1982, de 5 de mayo, sobre el derecho al honor, a la intimidad personal y familiar y a la propia imagen, pedimos autorización a los padres o tutores legales de los menores de edad para el uso de la imagen obtenida con fotografías y/o vídeos realizados por nuestra entidad con la finalidad de exponerlas en nuestra web, en facebook e instagram.</p><p>Solicitamos el consentimiento y autorización a la AFA Escola Falguera, a hacer uso de las imágenes obtenidas durante su participación en las actividades extraescolares, publicadas en la página web o redes sociales.</p><p>A partir de la firma de este formulario usted autoriza expresamente el tratamiento de sus datos de carácter personal, para la finalidad especificada, por parte de la AFA Escola Falguera.</p>`,
+                conditions_modal_title: "Condiciones de las Extraescolares y Acogida",
+                conditions_modal_content: `<div class="space-y-3">
+                    <h4 class="font-bold text-base">Precios y Pago</h4>
+                    <ul class="list-disc list-inside text-sm">
+                        <li>Actividades Generales (16:30h a 18:00h): <strong>20€/mes socios</strong>, <strong>25€/mes no socios</strong>.</li>
+                        <li>Timbales: <strong>14€/mes socios</strong>, <strong>18€/mes no socios</strong>.</li>
+                        <li>Descuento 2 actividades/semana (misma actividad): <strong>36€/mes socios</strong>, <strong>40€/mes no socios</strong>.</li>
+                        <li>El pago es mensual, por transferencia bancaria a la cuenta <strong>ES22.0081.1604.7400.0103.8208</strong> antes del día 10 del mes.</li>
+                        <li class="font-semibold text-red-600">¡Importante! Indicar en el concepto el nombre del alumno/a y la actividad.</li>
+                    </ul>
+                    <h4 class="font-bold text-base pt-2">Condiciones Generales</h4>
+                    <ol class="list-decimal list-inside space-y-2 text-sm">
+                    <li>Para poder acceder a las extraescolares o acogida con el precio de socio, debéis estar al corriente del pago de la cuota de la AFA.</li>
+                    <li>La inscripción del alumno en la actividad se formalizará entregando el formulario de inscripción directamente a la AFA, o bien por correo electrónico a ampafalguera@hotmail.es, debidamente cumplimentado y firmado, conjuntamente con la declaración responsable.</li>
+                    <li>A partir de septiembre las solicitudes de alta y de baja de las actividades propuestas deberán entregarse a la AFA antes del día 20 del mes en curso (una vez superado este plazo, la baja NO será efectiva hasta el mes siguiente y se deberá abonar la cuota correspondiente). Se pueden enviar vía e-mail o presencialmente en la oficina de la AFA.</li>
+                    <li>Todas las actividades son de pago mensual, con transferencia bancaria a la cuenta del Banc Sabadell ES22.0081.1604.7400.0103.8208 antes del día 10 del mes en curso. ¡Importante! Indicar en el concepto nombre del alumno y la actividad.</li>
+                    <li>Si no hubiera un número mínimo de alumnos, la actividad no se podrá realizar y se ofrecerán alternativas en la medida que sea posible.</li>
+                    <li>Si las solicitudes superan el número de plazas ofertadas, se tendrá en cuenta el orden de inscripción.</li>
+                    <li>No se descontará del precio ni se recuperará la no asistencia de los alumnos, ni los días de vacaciones y festivos según el calendario escolar. Sin embargo, sí son recuperables los días de clase no impartidos por causas atribuibles a la empresa de extraescolares.</li>
+                    <li>Los impagos que se produzcan causarán la baja del alumno en todas las actividades extraescolares.</li>
+                    <li>Es obligación de los padres/tutores advertir en el formulario de inscripción de cualquier enfermedad, alergia o intolerancia que el alumno pudiera sufrir.</li>
+                    <li>Las personas autorizadas para recoger al alumno de las extraescolares o acogida, serán los padres/madres/tutores/as y personas autorizadas que figuren en el formulario de inscripción.</li>
+                    <li>Se ha de respetar tanto a la persona responsable de la actividad, como a los compañeros y compañeras, materiales e infraestructuras. De no ser así, la AFA podrá decidir juntamente con la empresa de extraescolares, si alguien debe abandonar el grupo, a fin de preservar la buena marcha y el buen funcionamiento de la actividad.</li>
+                    <li>Los usuarios de becas confirmadas, deberán informar a la AFA marcando la casilla en el formulario de inscripción, y entregando el documento correspondiente.</li>
+                    <li>Las preinscripciones se harán del 10 al 14 de junio y del 10 al 20 de septiembre.</li>
+                </ol></div>`
+            }
+        };
+
+        const modal = document.getElementById('info-modal');
+        const modalOverlay = document.querySelector('.modal-overlay');
+        const modalContainer = document.querySelector('.modal-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalContent = document.getElementById('modal-content');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        const openModal = (titleKey, contentKey) => {
+            modalTitle.innerText = translations[currentLang][titleKey];
+            modalContent.innerHTML = translations[currentLang][contentKey];
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalOverlay.classList.remove('opacity-0');
+                modalContainer.classList.remove('scale-95');
+            }, 10);
+        };
+
+        const closeModal = () => {
+            modalOverlay.classList.add('opacity-0');
+            modalContainer.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        };
+
+        document.getElementById('image-info-btn').addEventListener('click', () => openModal('image_auth_modal_title', 'image_auth_modal_content'));
+        document.getElementById('conditions-btn').addEventListener('click', () => openModal('conditions_modal_title', 'conditions_modal_content'));
+        modalCloseBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+        
+        const setLanguage = (lang) => {
+            currentLang = lang;
+            document.documentElement.lang = lang;
+            document.querySelectorAll('[data-lang]').forEach(element => {
+                const key = element.dataset.lang;
+                if (translations[lang][key]) element.innerText = translations[lang][key];
+            });
+            document.querySelectorAll('[data-lang-placeholder]').forEach(element => {
+                const key = element.dataset.langPlaceholder;
+                if (translations[lang][key]) element.placeholder = translations[lang][key];
+            });
+            const caBtn = document.getElementById('lang-ca');
+            const esBtn = document.getElementById('lang-es');
+            
+            if (lang === 'ca') {
+                caBtn.classList.add('active');
+                caBtn.classList.remove('text-gray-600');
+                esBtn.classList.remove('active');
+                esBtn.classList.add('text-gray-600');
+            } else {
+                esBtn.classList.add('active');
+                esBtn.classList.remove('text-gray-600');
+                caBtn.classList.remove('active');
+                caBtn.classList.add('text-gray-600');
+            }
+            renderActivityCards();
+        };
+
+        const createActivityCard = (activity) => {
+            return `
+                <label class="activity-card flex flex-col justify-between p-3 rounded-lg hover:shadow-md cursor-pointer">
+                    <input type="checkbox" name="activity" value="${activity.value}">
+                    <span class="font-semibold text-gray-800 text-sm md:text-base" data-lang="${activity.langKey}"></span>
+                    <span class="text-xs text-gray-500 mt-1">${activity.schedule}</span>
+                    <span class="text-xs text-white bg-blue-500 rounded-full px-2 py-0.5 mt-2 self-start" data-lang="${activity.dayLangKey}"></span>
+                </label>
+            `;
+        }
+
+        const renderActivityCards = () => {
+            const infantilContainer = document.querySelector('#activities-infantil .grid');
+            const primaria1Container = document.querySelector('#activities-primaria1 .grid');
+            const primaria2Container = document.querySelector('#activities-primaria2 .grid');
+
+            infantilContainer.innerHTML = allActivities.infantil.map(createActivityCard).join('');
+            primaria1Container.innerHTML = allActivities.primaria1.map(createActivityCard).join('');
+            primaria2Container.innerHTML = allActivities.primaria2.map(createActivityCard).join('');
+
+            document.querySelectorAll('[data-lang]').forEach(element => {
+                const key = element.dataset.lang;
+                if (translations[currentLang][key]) element.innerText = translations[currentLang][key];
+            });
+
+            document.querySelectorAll('.activity-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const checkbox = card.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    card.classList.toggle('selected', checkbox.checked);
+                });
+            });
+        }
+
+        document.getElementById('copy-iban-btn').addEventListener('click', (e) => {
+            const iban = document.getElementById('iban-account').innerText;
+            navigator.clipboard.writeText(iban).then(() => {
+                e.target.innerText = translations[currentLang].payment_copied_iban;
+                setTimeout(() => {
+                    e.target.innerText = translations[currentLang].payment_copy_iban;
+                }, 2000);
+            });
+        });
+
+        document.getElementById('lang-ca').addEventListener('click', () => setLanguage('ca'));
+        document.getElementById('lang-es').addEventListener('click', () => setLanguage('es'));
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            renderActivityCards();
+            setLanguage('ca');
+        });
+
+        const studentCourse = document.getElementById('student-course');
+        const activitiesInfantil = document.getElementById('activities-infantil');
+        const activitiesPrimaria1 = document.getElementById('activities-primaria1');
+        const activitiesPrimaria2 = document.getElementById('activities-primaria2');
+        const form = document.getElementById('inscription-form');
+        const statusMessage = document.getElementById('status-message');
+        const submitButton = document.getElementById('submit-button');
+        const submitText = document.getElementById('submit-text');
+        const submitLoader = document.getElementById('submit-loader');
+
+        studentCourse.addEventListener('change', (e) => {
+            const course = e.target.value;
+            [activitiesInfantil, activitiesPrimaria1, activitiesPrimaria2].forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.activity-card').forEach(card => {
+                card.classList.remove('selected');
+                card.querySelector('input').checked = false;
+            });
+
+            if (['I3', 'I4', 'I5'].includes(course)) {
+                activitiesInfantil.classList.add('active');
+            } else if (['1PRI', '2PRI', '3PRI'].includes(course)) {
+                activitiesPrimaria1.classList.add('active');
+            } else if (['4PRI', '5PRI', '6PRI'].includes(course)) {
+                activitiesPrimaria2.classList.add('active');
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (SUPABASE_URL === "LA_TEVA_URL_DE_SUPABASE" || SUPABASE_KEY === "LA_TEVA_ANON_KEY_DE_SUPABASE") {
+                showStatus(translations[currentLang].status_error_supabase_credentials, 'error');
+                return;
+            }
+
+            try {
+                 supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+            } catch (error) {
+                console.error("Error initializing Supabase client:", error);
+                showStatus(translations[currentLang].status_error_generic.replace('{error}', error.message), 'error');
+                return;
+            }
+            
+            const selectedActivities = Array.from(document.querySelectorAll('input[name="activity"]:checked'));
+            if (selectedActivities.length === 0) {
+                showStatus(translations[currentLang].status_error_activity_required, 'error');
+                document.querySelector('[data-lang="activities_legend"]').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+            
+            setLoading(true);
+            const formData = new FormData(form);
+            const selectedActivitiesValues = selectedActivities.map(activity => activity.value);
+            const submissionData = {
+                student_name: formData.get('student_name'), student_surname: formData.get('student_surname'), student_course: formData.get('student_course'),
+                parent_name: formData.get('parent_name'), parent_dni: formData.get('parent_dni'), parent_phone_1: formData.get('parent_phone_1'),
+                parent_phone_2: formData.get('parent_phone_2') || 'No informat', parent_email_1: formData.get('parent_email_1'), parent_email_2: formData.get('parent_email_2') || 'No informat',
+                afa_member: formData.get('afa_member') === 'true', health_info: formData.get('health_info') || 'Cap', activities: selectedActivitiesValues,
+                image_auth_consent: formData.get('image_auth_consent'), can_leave_alone: formData.get('can_leave_alone') === 'true',
+                authorized_pickup: formData.get('authorized_pickup') || 'Cap persona addicional autoritzada.',
+                conditions_accepted: formData.get('conditions_accepted') === 'on',
+                form_language: currentLang,
+            };
+            try {
+                const { data, error } = await supabaseClient.from('inscripcions').insert([submissionData]);
+                if (error) throw error;
+                showStatus(translations[currentLang].status_success, 'success');
+                form.reset();
+                [activitiesInfantil, activitiesPrimaria1, activitiesPrimaria2].forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.activity-card.selected').forEach(c => c.classList.remove('selected'));
+            } catch (error) {
+                console.error('Error submitting to Supabase:', error);
+                showStatus(translations[currentLang].status_error_generic.replace('{error}', error.message), 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+        
+        function setLoading(isLoading) {
+            submitButton.disabled = isLoading;
+            submitText.classList.toggle('hidden', isLoading);
+            submitLoader.classList.toggle('hidden', !isLoading);
+        }
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `mt-6 text-center p-3 rounded-lg ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            setTimeout(() => {
+                statusMessage.textContent = '';
+                statusMessage.className = 'mt-6 text-center';
+            }, 10000);
+        }
+    </script>
+</body>
+</html>
+
