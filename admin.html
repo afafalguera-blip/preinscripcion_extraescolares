@@ -200,13 +200,14 @@
         </div>
     </div>
 
-    <script type="module">
-        // Verificar autenticación antes de cargar el panel
+    <script>
+        // Verificar autenticación INMEDIATAMENTE al cargar la página
         function checkAuthentication() {
             const isAuthenticated = sessionStorage.getItem('admin_authenticated');
             const loginTime = sessionStorage.getItem('admin_login_time');
+            const userId = sessionStorage.getItem('admin_user_id');
             
-            if (isAuthenticated !== 'true' || !loginTime) {
+            if (isAuthenticated !== 'true' || !loginTime || !userId) {
                 window.location.href = 'admin_login.html';
                 return false;
             }
@@ -220,6 +221,7 @@
                 // Sesión expirada
                 sessionStorage.removeItem('admin_authenticated');
                 sessionStorage.removeItem('admin_user');
+                sessionStorage.removeItem('admin_user_id');
                 sessionStorage.removeItem('admin_login_time');
                 window.location.href = 'admin_login.html';
                 return false;
@@ -228,11 +230,16 @@
             return true;
         }
 
-        // Verificar autenticación al cargar la página
+        // Verificar autenticación ANTES de mostrar cualquier contenido
         if (!checkAuthentication()) {
-            // Redirigir a login si no está autenticado
-            document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen"><div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p class="text-gray-600">Redirigiendo al login...</p></div></div>';
+            // Ocultar todo el contenido y mostrar mensaje de redirección
+            document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen bg-gray-100"><div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p class="text-gray-600">Redirigiendo al login...</p></div></div>';
+            // Detener la ejecución del resto del script
+            throw new Error('No autorizado');
         }
+    </script>
+
+    <script type="module">
 
         const { createClient } = supabase;
         
@@ -256,11 +263,21 @@
 
         // Load data on page load
         document.addEventListener('DOMContentLoaded', () => {
+            // Verificación adicional de seguridad
+            if (!checkAuthentication()) {
+                return;
+            }
+            
             loadInscriptions();
             setupEventListeners();
         });
 
         async function loadInscriptions() {
+            // Verificar autenticación antes de cargar datos
+            if (!checkAuthentication()) {
+                return;
+            }
+            
             setLoading(true);
             try {
                 const { data, error } = await supabaseClient
@@ -639,13 +656,23 @@
             const activityFilter = document.getElementById('activity-filter').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
 
+            console.log('Aplicando filtros:', { courseFilter, activityFilter, searchTerm });
+            console.log('Total inscripciones:', allInscriptions.length);
+
             filteredInscriptions = allInscriptions.filter(inscription => {
                 // Check course filter
                 let matchesCourse = true;
                 if (courseFilter) {
                     if (inscription.students && Array.isArray(inscription.students)) {
                         // New format with multiple students
-                        matchesCourse = inscription.students.some(student => student.course === courseFilter);
+                        console.log('Verificando curso en students:', inscription.students);
+                        const studentCourses = inscription.students.map(s => s.course);
+                        console.log('Cursos encontrados:', studentCourses);
+                        matchesCourse = inscription.students.some(student => {
+                            console.log(`Comparando: "${student.course}" === "${courseFilter}"`);
+                            return student.course === courseFilter;
+                        });
+                        console.log('matchesCourse:', matchesCourse);
                     } else {
                         // Old format with single student
                         matchesCourse = inscription.student_course === courseFilter;
@@ -687,6 +714,7 @@
                 return matchesCourse && matchesActivity && matchesSearch;
             });
 
+            console.log('Inscripciones filtradas:', filteredInscriptions.length);
             currentPage = 1;
             renderTable();
         }
@@ -729,6 +757,7 @@
             if (confirm('¿Estás seguro de que quieres cerrar la sesión?')) {
                 sessionStorage.removeItem('admin_authenticated');
                 sessionStorage.removeItem('admin_user');
+                sessionStorage.removeItem('admin_user_id');
                 sessionStorage.removeItem('admin_login_time');
                 window.location.href = 'admin_login.html';
             }
