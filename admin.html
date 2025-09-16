@@ -230,7 +230,7 @@
                 const { data, error } = await supabaseClient
                     .from('inscripcions')
                     .select('*')
-                    .order('created_at', { ascending: false });
+                    .order('id', { ascending: false });
 
                 if (error) throw error;
 
@@ -291,23 +291,43 @@
             const endIndex = startIndex + itemsPerPage;
             const pageData = filteredInscriptions.slice(startIndex, endIndex);
 
-            tbody.innerHTML = pageData.map(inscription => `
+            tbody.innerHTML = pageData.map(inscription => {
+                // Handle both old format (single student) and new format (multiple students)
+                let studentsInfo = '';
+                let activitiesInfo = '';
+                
+                if (inscription.students && Array.isArray(inscription.students)) {
+                    // New format with multiple students
+                    studentsInfo = inscription.students.map(student => 
+                        `${student.name} ${student.surname} (${student.course})`
+                    ).join(', ');
+                    
+                    const allActivities = inscription.students.flatMap(student => student.activities);
+                    activitiesInfo = allActivities.slice(0, 2).join(', ') + 
+                        (allActivities.length > 2 ? ` +${allActivities.length - 2} más` : '');
+                } else {
+                    // Old format with single student
+                    studentsInfo = `${inscription.student_name || ''} ${inscription.student_surname || ''}`;
+                    activitiesInfo = inscription.activities ? 
+                        (inscription.activities.slice(0, 2).join(', ') + 
+                        (inscription.activities.length > 2 ? ` +${inscription.activities.length - 2} más` : '')) : 
+                        'N/A';
+                }
+                
+                return `
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">${inscription.student_name} ${inscription.student_surname}</div>
+                        <div class="text-sm font-medium text-gray-900">${studentsInfo}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${inscription.student_course}</span>
+                        <span class="text-sm text-gray-900">${inscription.students ? inscription.students.map(s => s.course).join(', ') : (inscription.student_course || 'N/A')}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="text-sm text-gray-900">
-                            ${inscription.activities.slice(0, 2).join(', ')}
-                            ${inscription.activities.length > 2 ? ` +${inscription.activities.length - 2} más` : ''}
-                        </div>
+                        <div class="text-sm text-gray-900">${activitiesInfo}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">${inscription.parent_phone_1}</div>
-                        <div class="text-sm text-gray-500">${inscription.parent_email_1}</div>
+                        <div class="text-sm text-gray-900">${inscription.parent_phone_1 || 'N/A'}</div>
+                        <div class="text-sm text-gray-500">${inscription.parent_email_1 || 'N/A'}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
@@ -315,7 +335,7 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${new Date(inscription.created_at).toLocaleDateString('es-ES')}
+                        ${inscription.created_at ? new Date(inscription.created_at).toLocaleDateString('es-ES') : 'N/A'}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
@@ -326,7 +346,8 @@
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
 
             renderPagination();
         }
@@ -393,36 +414,59 @@
             const modal = document.getElementById('detail-modal');
             const content = document.getElementById('modal-content');
             
-            content.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            let studentsHtml = '';
+            let activitiesHtml = '';
+            
+            if (inscription.students && Array.isArray(inscription.students)) {
+                // New format with multiple students
+                studentsHtml = inscription.students.map((student, index) => `
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <h5 class="font-semibold text-gray-800 mb-2">Alumno/a ${index + 1}</h5>
+                        <p><strong>Nombre:</strong> ${student.name} ${student.surname}</p>
+                        <p><strong>Curso:</strong> ${student.course}</p>
+                        <p><strong>Actividades:</strong></p>
+                        <ul class="list-disc list-inside ml-4">
+                            ${student.activities.map(activity => `<li>${activity}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+            } else {
+                // Old format with single student
+                studentsHtml = `
                     <div>
                         <h4 class="font-semibold text-gray-900 mb-2">Datos del Alumno</h4>
-                        <p><strong>Nombre:</strong> ${inscription.student_name} ${inscription.student_surname}</p>
-                        <p><strong>Curso:</strong> ${inscription.student_course}</p>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Datos del Padre/Madre</h4>
-                        <p><strong>Nombre:</strong> ${inscription.parent_name}</p>
-                        <p><strong>DNI:</strong> ${inscription.parent_dni}</p>
-                        <p><strong>Teléfono 1:</strong> ${inscription.parent_phone_1}</p>
-                        <p><strong>Teléfono 2:</strong> ${inscription.parent_phone_2}</p>
-                        <p><strong>Email 1:</strong> ${inscription.parent_email_1}</p>
-                        <p><strong>Email 2:</strong> ${inscription.parent_email_2}</p>
+                        <p><strong>Nombre:</strong> ${inscription.student_name || 'N/A'} ${inscription.student_surname || 'N/A'}</p>
+                        <p><strong>Curso:</strong> ${inscription.student_course || 'N/A'}</p>
                     </div>
                     <div>
                         <h4 class="font-semibold text-gray-900 mb-2">Actividades</h4>
                         <ul class="list-disc list-inside">
-                            ${inscription.activities.map(activity => `<li>${activity}</li>`).join('')}
+                            ${inscription.activities ? inscription.activities.map(activity => `<li>${activity}</li>`).join('') : '<li>N/A</li>'}
                         </ul>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    ${studentsHtml}
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Datos del Padre/Madre</h4>
+                        <p><strong>Nombre:</strong> ${inscription.parent_name || 'N/A'}</p>
+                        <p><strong>DNI:</strong> ${inscription.parent_dni || 'N/A'}</p>
+                        <p><strong>Teléfono 1:</strong> ${inscription.parent_phone_1 || 'N/A'}</p>
+                        <p><strong>Teléfono 2:</strong> ${inscription.parent_phone_2 || 'N/A'}</p>
+                        <p><strong>Email 1:</strong> ${inscription.parent_email_1 || 'N/A'}</p>
+                        <p><strong>Email 2:</strong> ${inscription.parent_email_2 || 'N/A'}</p>
                     </div>
                     <div>
                         <h4 class="font-semibold text-gray-900 mb-2">Información Adicional</h4>
                         <p><strong>Socio AFA:</strong> ${inscription.afa_member ? 'Sí' : 'No'}</p>
-                        <p><strong>Información de salud:</strong> ${inscription.health_info}</p>
-                        <p><strong>Autorización de imagen:</strong> ${inscription.image_auth_consent}</p>
+                        <p><strong>Información de salud:</strong> ${inscription.health_info || 'N/A'}</p>
+                        <p><strong>Autorización de imagen:</strong> ${inscription.image_auth_consent || 'N/A'}</p>
                         <p><strong>Puede salir solo:</strong> ${inscription.can_leave_alone ? 'Sí' : 'No'}</p>
-                        <p><strong>Personas autorizadas:</strong> ${inscription.authorized_pickup}</p>
-                        <p><strong>Idioma del formulario:</strong> ${inscription.form_language}</p>
+                        <p><strong>Personas autorizadas:</strong> ${inscription.authorized_pickup || 'N/A'}</p>
+                        <p><strong>Idioma del formulario:</strong> ${inscription.form_language || 'N/A'}</p>
                     </div>
                 </div>
             `;
@@ -456,7 +500,7 @@
 
         function exportToCSV() {
             const headers = [
-                'ID', 'Nombre Alumno', 'Apellidos Alumno', 'Curso', 'Nombre Padre/Madre', 'DNI', 
+                'ID', 'Alumnos', 'Cursos', 'Nombre Padre/Madre', 'DNI', 
                 'Teléfono 1', 'Teléfono 2', 'Email 1', 'Email 2', 'Socio AFA', 'Actividades', 
                 'Información Salud', 'Autorización Imagen', 'Puede Salir Solo', 'Personas Autorizadas', 
                 'Idioma Formulario', 'Fecha Inscripción'
@@ -464,26 +508,43 @@
 
             const csvContent = [
                 headers.join(','),
-                ...filteredInscriptions.map(ins => [
-                    ins.id,
-                    `"${ins.student_name}"`,
-                    `"${ins.student_surname}"`,
-                    ins.student_course,
-                    `"${ins.parent_name}"`,
-                    ins.parent_dni,
-                    ins.parent_phone_1,
-                    ins.parent_phone_2,
-                    ins.parent_email_1,
-                    ins.parent_email_2,
-                    ins.afa_member ? 'Sí' : 'No',
-                    `"${ins.activities.join('; ')}"`,
-                    `"${ins.health_info}"`,
-                    ins.image_auth_consent,
-                    ins.can_leave_alone ? 'Sí' : 'No',
-                    `"${ins.authorized_pickup}"`,
-                    ins.form_language,
-                    new Date(ins.created_at).toLocaleDateString('es-ES')
-                ].join(','))
+                ...filteredInscriptions.map(ins => {
+                    let studentsInfo = '';
+                    let coursesInfo = '';
+                    let activitiesInfo = '';
+                    
+                    if (ins.students && Array.isArray(ins.students)) {
+                        // New format with multiple students
+                        studentsInfo = ins.students.map(s => `${s.name} ${s.surname}`).join('; ');
+                        coursesInfo = ins.students.map(s => s.course).join('; ');
+                        activitiesInfo = ins.students.flatMap(s => s.activities).join('; ');
+                    } else {
+                        // Old format with single student
+                        studentsInfo = `${ins.student_name || ''} ${ins.student_surname || ''}`;
+                        coursesInfo = ins.student_course || '';
+                        activitiesInfo = ins.activities ? ins.activities.join('; ') : '';
+                    }
+                    
+                    return [
+                        ins.id,
+                        `"${studentsInfo}"`,
+                        coursesInfo,
+                        `"${ins.parent_name || ''}"`,
+                        ins.parent_dni || '',
+                        ins.parent_phone_1 || '',
+                        ins.parent_phone_2 || '',
+                        ins.parent_email_1 || '',
+                        ins.parent_email_2 || '',
+                        ins.afa_member ? 'Sí' : 'No',
+                        `"${activitiesInfo}"`,
+                        `"${ins.health_info || ''}"`,
+                        ins.image_auth_consent || '',
+                        ins.can_leave_alone ? 'Sí' : 'No',
+                        `"${ins.authorized_pickup || ''}"`,
+                        ins.form_language || '',
+                        ins.created_at ? new Date(ins.created_at).toLocaleDateString('es-ES') : 'N/A'
+                    ].join(',');
+                })
             ].join('\n');
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
