@@ -2,7 +2,8 @@
 <html lang="ca">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
     <title data-lang="page_title">Formulari Preinscripció Extraescolars 2025-26 | AFA Escola Falguera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -17,11 +18,16 @@
             border-radius: 50%;
             width: 24px;
             height: 24px;
+            -webkit-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
         }
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+        }
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
         }
         .lang-btn.active {
             font-weight: bold;
@@ -31,28 +37,58 @@
         }
         .lang-btn {
             border: 2px solid transparent;
+            -webkit-transition: all 0.2s ease-in-out;
             transition: all 0.2s ease-in-out;
         }
         /* Modal styles */
         .modal-overlay {
+            -webkit-transition: opacity 0.3s ease;
             transition: opacity 0.3s ease;
         }
         .modal-container {
+            -webkit-transition: -webkit-transform 0.3s ease;
             transition: transform 0.3s ease;
         }
         /* New Activity Card Styles */
         .activity-card {
+            -webkit-transition: all 0.2s ease-in-out;
             transition: all 0.2s ease-in-out;
             border: 2px solid #e5e7eb; /* border-gray-200 */
         }
         .activity-card.selected {
             border-color: #3b82f6; /* border-blue-500 */
             background-color: #eff6ff; /* bg-blue-50 */
+            -webkit-transform: translateY(-2px);
             transform: translateY(-2px);
+            -webkit-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .activity-card input[type="checkbox"] {
             display: none;
+        }
+        
+        /* Safari-specific fixes */
+        input[type="tel"], input[type="text"], input[type="email"] {
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-border-radius: 0;
+            border-radius: 0;
+        }
+        
+        input[type="radio"], input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        /* Fix for Safari flexbox issues */
+        .flex {
+            display: -webkit-flex;
+            display: flex;
+        }
+        
+        .grid {
+            display: -webkit-grid;
+            display: grid;
         }
     </style>
 </head>
@@ -63,7 +99,7 @@
         <div class="flex justify-end items-center mb-4">
             <div class="text-right">
                 <button id="lang-ca" class="lang-btn active p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <span class="text-2xl">🇪🇸</span>
+                    <span class="text-2xl">🏴</span>
                     <span class="text-sm font-medium">Català</span>
                 </button>
                 <button id="lang-es" class="lang-btn text-gray-600 p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -122,7 +158,6 @@
                     <p class="font-semibold" data-lang="schedule_info_title">Horaris d'Activitats:</p>
                     <p data-lang="schedule_general">• Activitats generals: 16:30h a 18:00h</p>
                     <p data-lang="schedule_english">• Classes d'Anglès: 16:30h a 17:45h</p>
-                    <p data-lang="schedule_english_special">• Anglès: 16:30h a 17:45h</p>
                     <p data-lang="schedule_timbals">• Timbals: 17:30h a 19:00h</p>
                 </div>
                 
@@ -312,15 +347,15 @@
                     </div>
                      <div>
                         <label for="parent-dni" class="block text-sm font-medium text-gray-700" data-lang="parent_dni">DNI/NIF</label>
-                        <input type="text" id="parent-dni" name="parent_dni" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="text" id="parent-dni" name="parent_dni" required pattern="[0-9]{8}[A-Za-z]" title="El DNI debe tener 8 dígitos seguidos de una letra" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-phone-1" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_1">Telèfon de Contacte 1 <span class="text-red-500">*</span></label>
-                        <input type="tel" id="parent-phone-1" name="parent_phone_1" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="tel" id="parent-phone-1" name="parent_phone_1" required pattern="[0-9]{9}" title="El teléfono debe tener 9 dígitos" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-phone-2" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_2">Telèfon de Contacte 2 <span class="text-gray-400" data-lang="optional">(Opcional)</span></label>
-                        <input type="tel" id="parent-phone-2" name="parent_phone_2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="tel" id="parent-phone-2" name="parent_phone_2" pattern="[0-9]{9}" title="El teléfono debe tener 9 dígitos" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-email-1" class="block text-sm font-medium text-gray-700" data-lang="parent_email_1">Email de Contacte 1 <span class="text-red-500">*</span></label>
@@ -334,7 +369,7 @@
                         <label class="block text-sm font-medium text-gray-700" data-lang="afa_member_question">Sou socis de l'AFA? <span class="text-red-500">*</span></label>
                         <div class="mt-2 flex items-center space-x-4">
                             <label class="flex items-center"><input type="radio" name="afa_member" value="true" required class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="yes">Sí</span></label>
-                            <label class="flex items-center"><input type="radio" name="afa_member" value="false" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="no">No</span></label>
+                            <label class="flex items-center"><input type="radio" name="afa_member" value="false" required class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="no">No</span></label>
                         </div>
                     </div>
                 </div>
@@ -470,7 +505,6 @@
                 schedule_info_title: "Horaris d'Activitats:",
                 schedule_general: "• Activitats generals: 16:30h a 18:00h",
                 schedule_english: "• Classes d'Anglès: 16:30h a 17:45h",
-                schedule_english_special: "• Anglès: 16:30h a 17:45h",
                 schedule_timbals: "• Timbals: 17:30h a 19:00h",
                 english_payment_notice_title: "⚠️ AVÍS IMPORTANT - Classes d'Anglès:",
                 english_payment_notice_body: "Les classes d'Anglès dels dimarts i dimecres NO es paguen a través de l'AFA. El pagament es gestiona directament amb l'empresa d'anglès.",
@@ -572,7 +606,6 @@
                 schedule_info_title: "Horarios de Actividades:",
                 schedule_general: "• Actividades generales: 16:30h a 18:00h",
                 schedule_english: "• Clases de Inglés: 16:30h a 17:45h",
-                schedule_english_special: "• Inglés: 16:30h a 17:45h",
                 schedule_timbals: "• Timbales: 17:30h a 19:00h",
                 english_payment_notice_title: "⚠️ AVISO IMPORTANTE - Clases de Inglés:",
                 english_payment_notice_body: "Las clases de Inglés de los martes y miércoles NO se pagan a través del AFA. El pago se gestiona directamente con la empresa de inglés mediante un enlace que el AFA facilitará una vez se confirmen las clases.",
@@ -890,6 +923,49 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            // Validación de campos obligatorios
+            const afaMember = document.querySelector('input[name="afa_member"]:checked');
+            const conditionsAccepted = document.getElementById('conditions-accepted').checked;
+            
+            if (!afaMember) {
+                showStatus('Por favor, selecciona si sois socios del AFA', 'error');
+                document.querySelector('[data-lang="afa_member_question"]').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            
+            if (!conditionsAccepted) {
+                showStatus('Debes aceptar las condiciones para continuar', 'error');
+                document.getElementById('conditions-accepted').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            
+            // Validación de formato de teléfono
+            const phone1 = document.getElementById('parent-phone-1').value;
+            const phone2 = document.getElementById('parent-phone-2').value;
+            const phonePattern = /^[0-9]{9}$/;
+            
+            if (!phonePattern.test(phone1)) {
+                showStatus('El teléfono de contacto 1 debe tener 9 dígitos', 'error');
+                document.getElementById('parent-phone-1').focus();
+                return;
+            }
+            
+            if (phone2 && !phonePattern.test(phone2)) {
+                showStatus('El teléfono de contacto 2 debe tener 9 dígitos', 'error');
+                document.getElementById('parent-phone-2').focus();
+                return;
+            }
+            
+            // Validación de formato de DNI
+            const dni = document.getElementById('parent-dni').value;
+            const dniPattern = /^[0-9]{8}[A-Za-z]$/;
+            
+            if (!dniPattern.test(dni)) {
+                showStatus('El DNI debe tener 8 dígitos seguidos de una letra', 'error');
+                document.getElementById('parent-dni').focus();
+                return;
+            }
+
             if (SUPABASE_URL === "LA_TEVA_URL_DE_SUPABASE" || SUPABASE_KEY === "LA_TEVA_ANON_KEY_DE_SUPABASE") {
                 showStatus(translations[currentLang].status_error_supabase_credentials, 'error');
                 return;
@@ -909,7 +985,7 @@
             
             if (selectedActivities1.length === 0 && selectedActivities2.length === 0) {
                 showStatus(translations[currentLang].status_error_activity_required, 'error');
-                document.querySelector('[data-lang="activities_legend"]').scrollIntoView({ behavior: 'smooth' });
+                document.querySelector('[data-lang="activities_legend"]').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
             
