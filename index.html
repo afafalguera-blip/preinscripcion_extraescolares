@@ -23,46 +23,35 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .selector-idioma {
+        .language-buttons {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
-        .idioma-actual {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 8px 12px;
-            background-color: #3b82f6;
-            color: white;
-            border-radius: 6px;
-            font-weight: 500;
+        .lang-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
             font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
+            font-family: 'Inter', sans-serif;
         }
-        .idioma-actual:hover {
+        .lang-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        }
+        .lang-btn.active:hover {
             background-color: #2563eb;
         }
-        .otros-idiomas {
-            display: flex;
-            gap: 5px;
-        }
-        .lang-link {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 8px 12px;
+        .lang-btn:not(.active) {
             background-color: #f3f4f6;
-            color: #374151;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.2s ease-in-out;
+            color: #6b7280;
         }
-        .lang-link:hover {
+        .lang-btn:not(.active):hover {
             background-color: #e5e7eb;
-            color: #1f2937;
+            color: #374151;
         }
         /* Modal styles */
         .modal-overlay {
@@ -92,25 +81,9 @@
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
         
         <div class="flex justify-end items-center mb-4">
-            <div class="selector-idioma text-right">
-                <div class="idioma-actual" id="current-lang">
-                    <svg id="current-flag" xmlns="http://www.w3.org/2000/svg" width="32" height="21" viewBox="0 0 750 500">
-                        <rect width="750" height="500" fill="#c60b1e"/>
-                        <rect y="125" width="750" height="250" fill="#ffc400"/>
-                    </svg>
-                    <span id="current-lang-code">ES</span>
-                    <span id="current-lang-name">Español</span>
-                </div>
-                <div class="otros-idiomas">
-                    <a href="#" id="lang-ca" class="lang-link">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="21" viewBox="0 0 900 600">
-                            <rect width="900" height="600" fill="#fcdd09"/>
-                            <path stroke="#da121a" stroke-width="66.6" d="M0 100h900M0 233h900M0 367h900M0 500h900"/>
-                        </svg>
-                        <span>CA</span>
-                        <span>Català</span>
-                    </a>
-                </div>
+            <div class="language-buttons text-right">
+                <button id="lang-ca" class="lang-btn active">CA Català</button>
+                <button id="lang-es" class="lang-btn">ES Español</button>
             </div>
         </div>
 
@@ -731,22 +704,15 @@
                 const key = element.dataset.langPlaceholder;
                 if (translations[lang][key]) element.placeholder = translations[lang][key];
             });
-            const currentLangCode = document.getElementById('current-lang-code');
-            const currentLangName = document.getElementById('current-lang-name');
-            const currentFlag = document.getElementById('current-flag');
+            const caBtn = document.getElementById('lang-ca');
+            const esBtn = document.getElementById('lang-es');
             
             if (lang === 'ca') {
-                currentLangCode.textContent = 'CA';
-                currentLangName.textContent = 'Català';
-                // Cambiar a bandera de Cataluña
-                currentFlag.innerHTML = '<rect width="900" height="600" fill="#fcdd09"/><path stroke="#da121a" stroke-width="66.6" d="M0 100h900M0 233h900M0 367h900M0 500h900"/>';
-                currentFlag.setAttribute('viewBox', '0 0 900 600');
+                caBtn.classList.add('active');
+                esBtn.classList.remove('active');
             } else {
-                currentLangCode.textContent = 'ES';
-                currentLangName.textContent = 'Español';
-                // Cambiar a bandera de España
-                currentFlag.innerHTML = '<rect width="750" height="500" fill="#c60b1e"/><rect y="125" width="750" height="250" fill="#ffc400"/>';
-                currentFlag.setAttribute('viewBox', '0 0 750 500');
+                esBtn.classList.add('active');
+                caBtn.classList.remove('active');
             }
             renderActivityCards();
         };
@@ -821,14 +787,8 @@
             });
         });
 
-        document.getElementById('lang-ca').addEventListener('click', (e) => {
-            e.preventDefault();
-            setLanguage('ca');
-        });
-        
-        document.getElementById('current-lang').addEventListener('click', () => {
-            setLanguage(currentLang === 'ca' ? 'es' : 'ca');
-        });
+        document.getElementById('lang-ca').addEventListener('click', () => setLanguage('ca'));
+        document.getElementById('lang-es').addEventListener('click', () => setLanguage('es'));
         
         document.addEventListener('DOMContentLoaded', () => {
             renderActivityCards();
