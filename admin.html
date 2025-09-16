@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - AFA Escola Falguera</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-confirmed { background-color: #d1fae5; color: #065f46; }
+        .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Panel de Administración</h1>
+                        <p class="text-sm text-gray-600">AFA Escola Falguera - Gestión de Inscripciones</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="refresh-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <span id="refresh-text">Actualizar</span>
+                            <div id="refresh-loader" class="loader hidden"></div>
+                        </button>
+                        <button id="export-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            Exportar CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-blue-100 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Inscripciones</p>
+                            <p id="total-inscriptions" class="text-2xl font-semibold text-gray-900">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Socios AFA</p>
+                            <p id="afa-members" class="text-2xl font-semibold text-gray-900">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-yellow-100 rounded-lg">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">No Socios</p>
+                            <p id="non-members" class="text-2xl font-semibold text-gray-900">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-purple-100 rounded-lg">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Actividades Populares</p>
+                            <p id="popular-activity" class="text-lg font-semibold text-gray-900">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por curso:</label>
+                        <select id="course-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                            <option value="">Todos los cursos</option>
+                            <option value="I3">I3</option>
+                            <option value="I4">I4</option>
+                            <option value="I5">I5</option>
+                            <option value="1PRI">1º Primaria</option>
+                            <option value="2PRI">2º Primaria</option>
+                            <option value="3PRI">3º Primaria</option>
+                            <option value="4PRI">4º Primaria</option>
+                            <option value="5PRI">5º Primaria</option>
+                            <option value="6PRI">6º Primaria</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por actividad:</label>
+                        <select id="activity-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                            <option value="">Todas las actividades</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Buscar:</label>
+                        <input type="text" id="search-input" placeholder="Nombre del alumno..." class="border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inscriptions Table -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Lista de Inscripciones</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alumno</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Curso</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actividades</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AFA</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inscriptions-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="mt-6 flex items-center justify-between">
+                <!-- Pagination controls will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for viewing full details -->
+    <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
+        <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-4xl">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-2xl font-semibold text-gray-900">Detalles de la Inscripción</h3>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="modal-content" class="space-y-4">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const { createClient } = supabase;
+        
+        // Configuración de Supabase (usa las mismas credenciales)
+        const SUPABASE_URL = "https://zaxbtnjkidqwzqsehvld.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGJ0bmpraWRxd3pxc2VodmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMjc2NTMsImV4cCI6MjA3MzYwMzY1M30.9MNjQdeLvW_UaxZz0XQmR6jQSakzF-UzBWvdboWWHRg";
+        
+        let supabaseClient;
+        let allInscriptions = [];
+        let filteredInscriptions = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // Initialize Supabase client
+        try {
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (error) {
+            console.error("Error initializing Supabase client:", error);
+            showError("Error de configuración. Contacta con el administrador.");
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInscriptions();
+            setupEventListeners();
+        });
+
+        async function loadInscriptions() {
+            setLoading(true);
+            try {
+                const { data, error } = await supabaseClient
+                    .from('inscripcions')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allInscriptions = data || [];
+                filteredInscriptions = [...allInscriptions];
+                updateStats();
+                populateActivityFilter();
+                renderTable();
+            } catch (error) {
+                console.error('Error loading inscriptions:', error);
+                showError('Error al cargar las inscripciones: ' + error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('total-inscriptions').textContent = allInscriptions.length;
+            
+            const afaMembers = allInscriptions.filter(ins => ins.afa_member).length;
+            document.getElementById('afa-members').textContent = afaMembers;
+            document.getElementById('non-members').textContent = allInscriptions.length - afaMembers;
+
+            // Most popular activity
+            const activityCounts = {};
+            allInscriptions.forEach(ins => {
+                ins.activities.forEach(activity => {
+                    activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+                });
+            });
+            
+            const mostPopular = Object.entries(activityCounts)
+                .sort(([,a], [,b]) => b - a)[0];
+            
+            document.getElementById('popular-activity').textContent = mostPopular ? mostPopular[0] : 'N/A';
+        }
+
+        function populateActivityFilter() {
+            const activityFilter = document.getElementById('activity-filter');
+            const activities = new Set();
+            
+            allInscriptions.forEach(ins => {
+                ins.activities.forEach(activity => activities.add(activity));
+            });
+
+            activityFilter.innerHTML = '<option value="">Todas las actividades</option>';
+            Array.from(activities).sort().forEach(activity => {
+                const option = document.createElement('option');
+                option.value = activity;
+                option.textContent = activity;
+                activityFilter.appendChild(option);
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('inscriptions-table-body');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredInscriptions.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageData.map(inscription => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${inscription.student_name} ${inscription.student_surname}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-900">${inscription.student_course}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900">
+                            ${inscription.activities.slice(0, 2).join(', ')}
+                            ${inscription.activities.length > 2 ? ` +${inscription.activities.length - 2} más` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${inscription.parent_phone_1}</div>
+                        <div class="text-sm text-gray-500">${inscription.parent_email_1}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
+                            ${inscription.afa_member ? 'Sí' : 'No'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${new Date(inscription.created_at).toLocaleDateString('es-ES')}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                            Ver detalles
+                        </button>
+                        <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredInscriptions.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '<div class="flex items-center space-x-2">';
+            
+            // Previous button
+            paginationHTML += `
+                <button onclick="changePage(${currentPage - 1})" 
+                        ${currentPage === 1 ? 'disabled' : ''} 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Anterior
+                </button>
+            `;
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    paginationHTML += `
+                        <button onclick="changePage(${i})" 
+                                class="px-3 py-2 text-sm font-medium ${i === currentPage ? 'text-blue-600 bg-blue-50 border-blue-500' : 'text-gray-500 bg-white border-gray-300'} border rounded-md hover:bg-gray-50">
+                            ${i}
+                        </button>
+                    `;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    paginationHTML += '<span class="px-3 py-2 text-sm text-gray-500">...</span>';
+                }
+            }
+
+            // Next button
+            paginationHTML += `
+                <button onclick="changePage(${currentPage + 1})" 
+                        ${currentPage === totalPages ? 'disabled' : ''} 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Siguiente
+                </button>
+            `;
+
+            paginationHTML += '</div>';
+            pagination.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredInscriptions.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderTable();
+            }
+        }
+
+        function viewDetails(id) {
+            const inscription = allInscriptions.find(ins => ins.id === id);
+            if (!inscription) return;
+
+            const modal = document.getElementById('detail-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Datos del Alumno</h4>
+                        <p><strong>Nombre:</strong> ${inscription.student_name} ${inscription.student_surname}</p>
+                        <p><strong>Curso:</strong> ${inscription.student_course}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Datos del Padre/Madre</h4>
+                        <p><strong>Nombre:</strong> ${inscription.parent_name}</p>
+                        <p><strong>DNI:</strong> ${inscription.parent_dni}</p>
+                        <p><strong>Teléfono 1:</strong> ${inscription.parent_phone_1}</p>
+                        <p><strong>Teléfono 2:</strong> ${inscription.parent_phone_2}</p>
+                        <p><strong>Email 1:</strong> ${inscription.parent_email_1}</p>
+                        <p><strong>Email 2:</strong> ${inscription.parent_email_2}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Actividades</h4>
+                        <ul class="list-disc list-inside">
+                            ${inscription.activities.map(activity => `<li>${activity}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Información Adicional</h4>
+                        <p><strong>Socio AFA:</strong> ${inscription.afa_member ? 'Sí' : 'No'}</p>
+                        <p><strong>Información de salud:</strong> ${inscription.health_info}</p>
+                        <p><strong>Autorización de imagen:</strong> ${inscription.image_auth_consent}</p>
+                        <p><strong>Puede salir solo:</strong> ${inscription.can_leave_alone ? 'Sí' : 'No'}</p>
+                        <p><strong>Personas autorizadas:</strong> ${inscription.authorized_pickup}</p>
+                        <p><strong>Idioma del formulario:</strong> ${inscription.form_language}</p>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        async function deleteInscription(id) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta inscripción?')) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('inscripcions')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                // Remove from local arrays
+                allInscriptions = allInscriptions.filter(ins => ins.id !== id);
+                filteredInscriptions = filteredInscriptions.filter(ins => ins.id !== id);
+                
+                updateStats();
+                renderTable();
+                showSuccess('Inscripción eliminada correctamente');
+            } catch (error) {
+                console.error('Error deleting inscription:', error);
+                showError('Error al eliminar la inscripción: ' + error.message);
+            }
+        }
+
+        function exportToCSV() {
+            const headers = [
+                'ID', 'Nombre Alumno', 'Apellidos Alumno', 'Curso', 'Nombre Padre/Madre', 'DNI', 
+                'Teléfono 1', 'Teléfono 2', 'Email 1', 'Email 2', 'Socio AFA', 'Actividades', 
+                'Información Salud', 'Autorización Imagen', 'Puede Salir Solo', 'Personas Autorizadas', 
+                'Idioma Formulario', 'Fecha Inscripción'
+            ];
+
+            const csvContent = [
+                headers.join(','),
+                ...filteredInscriptions.map(ins => [
+                    ins.id,
+                    `"${ins.student_name}"`,
+                    `"${ins.student_surname}"`,
+                    ins.student_course,
+                    `"${ins.parent_name}"`,
+                    ins.parent_dni,
+                    ins.parent_phone_1,
+                    ins.parent_phone_2,
+                    ins.parent_email_1,
+                    ins.parent_email_2,
+                    ins.afa_member ? 'Sí' : 'No',
+                    `"${ins.activities.join('; ')}"`,
+                    `"${ins.health_info}"`,
+                    ins.image_auth_consent,
+                    ins.can_leave_alone ? 'Sí' : 'No',
+                    `"${ins.authorized_pickup}"`,
+                    ins.form_language,
+                    new Date(ins.created_at).toLocaleDateString('es-ES')
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `inscripciones_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function setupEventListeners() {
+            // Refresh button
+            document.getElementById('refresh-btn').addEventListener('click', loadInscriptions);
+            
+            // Export button
+            document.getElementById('export-btn').addEventListener('click', exportToCSV);
+            
+            // Filters
+            document.getElementById('course-filter').addEventListener('change', applyFilters);
+            document.getElementById('activity-filter').addEventListener('change', applyFilters);
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+            
+            // Modal close
+            document.getElementById('close-modal').addEventListener('click', () => {
+                document.getElementById('detail-modal').classList.add('hidden');
+            });
+        }
+
+        function applyFilters() {
+            const courseFilter = document.getElementById('course-filter').value;
+            const activityFilter = document.getElementById('activity-filter').value;
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+            filteredInscriptions = allInscriptions.filter(inscription => {
+                const matchesCourse = !courseFilter || inscription.student_course === courseFilter;
+                const matchesActivity = !activityFilter || inscription.activities.includes(activityFilter);
+                const matchesSearch = !searchTerm || 
+                    inscription.student_name.toLowerCase().includes(searchTerm) ||
+                    inscription.student_surname.toLowerCase().includes(searchTerm) ||
+                    inscription.parent_name.toLowerCase().includes(searchTerm);
+
+                return matchesCourse && matchesActivity && matchesSearch;
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        function setLoading(isLoading) {
+            const refreshBtn = document.getElementById('refresh-btn');
+            const refreshText = document.getElementById('refresh-text');
+            const refreshLoader = document.getElementById('refresh-loader');
+            
+            refreshBtn.disabled = isLoading;
+            refreshText.classList.toggle('hidden', isLoading);
+            refreshLoader.classList.toggle('hidden', !isLoading);
+        }
+
+        function showSuccess(message) {
+            // Simple success notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function showError(message) {
+            // Simple error notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
+        }
+
+        // Make functions globally available
+        window.changePage = changePage;
+        window.viewDetails = viewDetails;
+        window.deleteInscription = deleteInscription;
+    </script>
+</body>
+</html>
