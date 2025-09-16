@@ -1042,6 +1042,83 @@
             return Array.from(activities).sort();
         }
 
+        function getActivitiesByCourse(course) {
+            // Definir las actividades según el curso
+            const courseActivities = {
+                'I3': [
+                    "Teatre Musical en Anglès (Dimarts)",
+                    "Marxa-Marxa en Anglès (Dijous)",
+                    "Iniciació a Timbals (Divendres)"
+                ],
+                'I4': [
+                    "Teatre Musical en Anglès (Dimarts)",
+                    "Marxa-Marxa en Anglès (Dijous)",
+                    "Iniciació a Timbals (Divendres)"
+                ],
+                'I5': [
+                    "Teatre Musical en Anglès (Dimarts)",
+                    "Marxa-Marxa en Anglès (Dijous)",
+                    "Iniciació a Timbals (Divendres)"
+                ],
+                '1PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Futbol (Dimarts)",
+                    "Anglès (Dimecres)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '2PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Futbol (Dimarts)",
+                    "Anglès (Dimecres)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '3PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Futbol (Dimarts)",
+                    "Anglès (Dimecres)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '4PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Anglès (Dimarts)",
+                    "Futbol (Dimarts)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '5PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Anglès (Dimarts)",
+                    "Futbol (Dimarts)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '6PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Anglès (Dimarts)",
+                    "Futbol (Dimarts)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ]
+            };
+            
+            return courseActivities[course] || [];
+        }
+
         function toggleStudentStatus(index) {
             const studentsContainer = document.getElementById('students-container');
             const studentElement = studentsContainer.querySelector(`[data-student-index="${index}"]`);
@@ -1051,14 +1128,7 @@
                 const toggleButton = studentElement.querySelector('button[onclick*="toggleStudentStatus"]');
                 const isCurrentlyActive = statusCheckbox.checked;
                 
-                // Verificar que no se suspenda el último estudiante activo
-                if (isCurrentlyActive) {
-                    const activeStudents = studentsContainer.querySelectorAll('.student-status:checked');
-                    if (activeStudents.length <= 1) {
-                        showError('No se puede suspender el último estudiante activo. Debe haber al menos uno activo.');
-                        return;
-                    }
-                }
+                // Ya no hay restricción para suspender el último estudiante
                 
                 // Cambiar el estado
                 statusCheckbox.checked = !isCurrentlyActive;
@@ -1192,10 +1262,7 @@
                 return;
             }
 
-            if (!hasActiveStudent) {
-                showError('Debe haber al menos un estudiante activo en la inscripción.');
-                return;
-            }
+            // Ya no hay restricción para tener al menos un estudiante activo
 
             try {
                 const { error } = await supabaseClient
