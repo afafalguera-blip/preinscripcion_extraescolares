@@ -930,8 +930,8 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
-                                <div class="space-y-2">
-                                    ${getAvailableActivities().map(activity => `
+                                <div class="space-y-2" id="activities-${index}">
+                                    ${getActivitiesByCourse(student.course).map(activity => `
                                         <label class="flex items-center">
                                             <input type="checkbox" value="${activity}" 
                                                    ${student.activities && student.activities.includes(activity) ? 'checked' : ''}
@@ -987,8 +987,8 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
-                                <div class="space-y-2">
-                                    ${getAvailableActivities().map(activity => `
+                                <div class="space-y-2" id="activities-0">
+                                    ${getActivitiesByCourse(inscription.student_course).map(activity => `
                                         <label class="flex items-center">
                                             <input type="checkbox" value="${activity}" 
                                                    ${inscription.activities && inscription.activities.includes(activity) ? 'checked' : ''}
@@ -1024,6 +1024,16 @@
             `;
             
             modal.classList.remove('hidden');
+            
+            // Agregar event listeners para actualizar actividades cuando cambie el curso
+            setTimeout(() => {
+                const courseSelects = document.querySelectorAll('.student-course');
+                courseSelects.forEach((select, index) => {
+                    select.addEventListener('change', function() {
+                        updateActivitiesForStudent(index, this.value);
+                    });
+                });
+            }, 100);
         }
 
         function getAvailableActivities() {
@@ -1119,6 +1129,24 @@
             return courseActivities[course] || [];
         }
 
+        function updateActivitiesForStudent(index, course) {
+            const activitiesContainer = document.getElementById(`activities-${index}`);
+            if (!activitiesContainer) return;
+            
+            const activities = getActivitiesByCourse(course);
+            const currentChecked = Array.from(activitiesContainer.querySelectorAll('.student-activity:checked'))
+                .map(checkbox => checkbox.value);
+            
+            activitiesContainer.innerHTML = activities.map(activity => `
+                <label class="flex items-center">
+                    <input type="checkbox" value="${activity}" 
+                           ${currentChecked.includes(activity) ? 'checked' : ''}
+                           class="student-activity mr-2" />
+                    <span class="text-sm">${activity}</span>
+                </label>
+            `).join('');
+        }
+
         function toggleStudentStatus(index) {
             const studentsContainer = document.getElementById('students-container');
             const studentElement = studentsContainer.querySelector(`[data-student-index="${index}"]`);
@@ -1193,8 +1221,8 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
-                            <div class="space-y-2">
-                                ${getAvailableActivities().map(activity => `
+                            <div class="space-y-2" id="activities-${newIndex}">
+                                ${getActivitiesByCourse('I3').map(activity => `
                                     <label class="flex items-center">
                                         <input type="checkbox" value="${activity}" class="student-activity mr-2" />
                                         <span class="text-sm">${activity}</span>
@@ -1207,6 +1235,16 @@
             `;
             
             studentsContainer.insertAdjacentHTML('beforeend', newStudentHtml);
+            
+            // Agregar event listener para el nuevo estudiante
+            setTimeout(() => {
+                const newSelect = document.querySelector(`[data-student-index="${newIndex}"] .student-course`);
+                if (newSelect) {
+                    newSelect.addEventListener('change', function() {
+                        updateActivitiesForStudent(newIndex, this.value);
+                    });
+                }
+            }, 100);
         }
 
         function reindexStudents() {
