@@ -347,15 +347,15 @@
                     </div>
                      <div>
                         <label for="parent-dni" class="block text-sm font-medium text-gray-700" data-lang="parent_dni">DNI/NIF</label>
-                        <input type="text" id="parent-dni" name="parent_dni" required pattern="[0-9]{8}[A-Za-z]" title="El DNI debe tener 8 dígitos seguidos de una letra" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="text" id="parent-dni" name="parent_dni" required pattern="[0-9]{8}[A-Za-z]" title="El DNI debe tener 8 dígitos seguidos de la letra correcta (ej: 12345678A)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-phone-1" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_1">Telèfon de Contacte 1 <span class="text-red-500">*</span></label>
-                        <input type="tel" id="parent-phone-1" name="parent_phone_1" required pattern="[0-9]{9}" title="El teléfono debe tener 9 dígitos" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="tel" id="parent-phone-1" name="parent_phone_1" required pattern="[6-9][0-9]{8}" title="El teléfono debe ser un móvil español válido (9 dígitos empezando por 6, 7, 8 o 9)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-phone-2" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_2">Telèfon de Contacte 2 <span class="text-gray-400" data-lang="optional">(Opcional)</span></label>
-                        <input type="tel" id="parent-phone-2" name="parent_phone_2" pattern="[0-9]{9}" title="El teléfono debe tener 9 dígitos" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="tel" id="parent-phone-2" name="parent_phone_2" pattern="[6-9][0-9]{8}" title="El teléfono debe ser un móvil español válido (9 dígitos empezando por 6, 7, 8 o 9)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-email-1" class="block text-sm font-medium text-gray-700" data-lang="parent_email_1">Email de Contacte 1 <span class="text-red-500">*</span></label>
@@ -458,13 +458,64 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGJ0bmpraWRxd3pxc2VodmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMjc2NTMsImV4cCI6MjA3MzYwMzY1M30.9MNjQdeLvW_UaxZz0XQmR6jQSakzF-UzBWvdboWWHRg"; // <-- ENGANXA AQUÍ LA TEVA ANON KEY
 
 
+        // Función para ordenar actividades por día de la semana
+        const sortActivitiesByDay = (activities) => {
+            const dayOrder = {
+                'day_dl': 1, // Lunes
+                'day_dt': 2, // Martes  
+                'day_dm': 2, // Martes (alternativo)
+                'day_dc': 3, // Miércoles
+                'day_dj': 4, // Jueves
+                'day_dv': 5  // Viernes
+            };
+            
+            return activities.sort((a, b) => {
+                const dayA = dayOrder[a.dayLangKey] || 6; // Si no encuentra el día, va al final
+                const dayB = dayOrder[b.dayLangKey] || 6;
+                return dayA - dayB;
+            });
+        };
+
+        // Función para validar DNI español
+        const validateDNI = (dni) => {
+            if (!dni || typeof dni !== 'string') return false;
+            
+            // Verificar formato: 8 dígitos + 1 letra
+            const dniRegex = /^[0-9]{8}[A-Za-z]$/;
+            if (!dniRegex.test(dni)) return false;
+            
+            // Extraer números y letra
+            const numbers = dni.substring(0, 8);
+            const letter = dni.substring(8, 9).toUpperCase();
+            
+            // Calcular letra correcta
+            const letterIndex = parseInt(numbers) % 23;
+            const correctLetters = 'TRWAGMYFPDXBNJZSQVHLCKE';
+            const correctLetter = correctLetters.charAt(letterIndex);
+            
+            return letter === correctLetter;
+        };
+
+        // Función para validar teléfono móvil español
+        const validatePhone = (phone) => {
+            if (!phone || typeof phone !== 'string') return false;
+            
+            // Verificar que tenga 9 dígitos
+            const phoneRegex = /^[0-9]{9}$/;
+            if (!phoneRegex.test(phone)) return false;
+            
+            // Verificar que empiece por 6, 7, 8 o 9 (móviles españoles)
+            const firstDigit = phone.charAt(0);
+            return ['6', '7', '8', '9'].includes(firstDigit);
+        };
+
         const allActivities = {
-             infantil: [
+             infantil: sortActivitiesByDay([
                 { value: "Teatre Musical en Anglès (Dimarts)", langKey: 'activity_teatre_musical_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
                 { value: "Marxa-Marxa en Anglès (Dijous)", langKey: 'activity_marxa_angles_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
                 { value: "Iniciació a Timbals (Divendres)", langKey: 'activity_timbals_iniciacio_dv', dayLangKey: 'day_dv', schedule: '17:30 - 19:00' },
-            ],
-            primaria1: [
+            ]),
+            primaria1: sortActivitiesByDay([
                 { value: "Anglès (Dimecres)", langKey: 'activity_angles_special_dc', dayLangKey: 'day_dc', schedule: '16:30 - 17:45' },
                 { value: "Futbol (Dimarts)", langKey: 'activity_futbol_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
                 { value: "Anglès (Dimecres)", langKey: 'activity_angles_dc', dayLangKey: 'day_dc', schedule: '16:30 - 17:45' },
@@ -472,8 +523,8 @@
                 { value: "Yoga (Dimecres)", langKey: 'activity_yoga_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
                 { value: "Futbol (Dijous)", langKey: 'activity_futbol_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
                 { value: "Timbals (Divendres)", langKey: 'activity_timbals_dv', dayLangKey: 'day_dv', schedule: '17:30 - 19:00' },
-            ],
-            primaria2: [
+            ]),
+            primaria2: sortActivitiesByDay([
                 { value: "Anglès (Dimecres)", langKey: 'activity_angles_special_dc', dayLangKey: 'day_dc', schedule: '16:30 - 17:45' },
                 { value: "Anglès (Dimarts)", langKey: 'activity_angles_dt', dayLangKey: 'day_dt', schedule: '16:30 - 17:45' },
                 { value: "Futbol (Dimarts)", langKey: 'activity_futbol_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
@@ -481,7 +532,7 @@
                 { value: "Yoga (Dimecres)", langKey: 'activity_yoga_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
                 { value: "Futbol (Dijous)", langKey: 'activity_futbol_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
                 { value: "Timbals (Divendres)", langKey: 'activity_timbals_dv', dayLangKey: 'day_dv', schedule: '17:30 - 19:00' },
-            ]
+            ])
         };
 
         const translations = {
@@ -824,7 +875,68 @@
             document.querySelectorAll('.form-section').forEach(section => {
                 section.classList.remove('active');
             });
+            
+            // Validación en tiempo real
+            setupRealTimeValidation();
         });
+
+        // Función para configurar validación en tiempo real
+        const setupRealTimeValidation = () => {
+            const dniInput = document.getElementById('parent-dni');
+            const phone1Input = document.getElementById('parent-phone-1');
+            const phone2Input = document.getElementById('parent-phone-2');
+            
+            // Validación DNI en tiempo real
+            dniInput.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length >= 9) { // Solo validar cuando esté completo
+                    if (validateDNI(value)) {
+                        e.target.style.borderColor = '#10b981'; // Verde
+                        e.target.style.borderWidth = '2px';
+                    } else {
+                        e.target.style.borderColor = '#ef4444'; // Rojo
+                        e.target.style.borderWidth = '2px';
+                    }
+                } else {
+                    e.target.style.borderColor = '#d1d5db'; // Gris normal
+                    e.target.style.borderWidth = '1px';
+                }
+            });
+            
+            // Validación teléfono 1 en tiempo real
+            phone1Input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length >= 9) { // Solo validar cuando esté completo
+                    if (validatePhone(value)) {
+                        e.target.style.borderColor = '#10b981'; // Verde
+                        e.target.style.borderWidth = '2px';
+                    } else {
+                        e.target.style.borderColor = '#ef4444'; // Rojo
+                        e.target.style.borderWidth = '2px';
+                    }
+                } else {
+                    e.target.style.borderColor = '#d1d5db'; // Gris normal
+                    e.target.style.borderWidth = '1px';
+                }
+            });
+            
+            // Validación teléfono 2 en tiempo real
+            phone2Input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length >= 9) { // Solo validar cuando esté completo
+                    if (validatePhone(value)) {
+                        e.target.style.borderColor = '#10b981'; // Verde
+                        e.target.style.borderWidth = '2px';
+                    } else {
+                        e.target.style.borderColor = '#ef4444'; // Rojo
+                        e.target.style.borderWidth = '2px';
+                    }
+                } else {
+                    e.target.style.borderColor = '#d1d5db'; // Gris normal
+                    e.target.style.borderWidth = '1px';
+                }
+            });
+        };
 
         const student1Course = document.getElementById('student1-course');
         const student2Course = document.getElementById('student2-course');
@@ -942,26 +1054,24 @@
             // Validación de formato de teléfono
             const phone1 = document.getElementById('parent-phone-1').value;
             const phone2 = document.getElementById('parent-phone-2').value;
-            const phonePattern = /^[0-9]{9}$/;
             
-            if (!phonePattern.test(phone1)) {
-                showStatus('El teléfono de contacto 1 debe tener 9 dígitos', 'error');
+            if (!validatePhone(phone1)) {
+                showStatus('El teléfono de contacto 1 debe ser un número móvil español válido (9 dígitos empezando por 6, 7, 8 o 9)', 'error');
                 document.getElementById('parent-phone-1').focus();
                 return;
             }
             
-            if (phone2 && !phonePattern.test(phone2)) {
-                showStatus('El teléfono de contacto 2 debe tener 9 dígitos', 'error');
+            if (phone2 && !validatePhone(phone2)) {
+                showStatus('El teléfono de contacto 2 debe ser un número móvil español válido (9 dígitos empezando por 6, 7, 8 o 9)', 'error');
                 document.getElementById('parent-phone-2').focus();
                 return;
             }
             
             // Validación de formato de DNI
             const dni = document.getElementById('parent-dni').value;
-            const dniPattern = /^[0-9]{8}[A-Za-z]$/;
             
-            if (!dniPattern.test(dni)) {
-                showStatus('El DNI debe tener 8 dígitos seguidos de una letra', 'error');
+            if (!validateDNI(dni)) {
+                showStatus('El DNI debe tener 8 dígitos seguidos de la letra correcta (ej: 12345678A)', 'error');
                 document.getElementById('parent-dni').focus();
                 return;
             }
