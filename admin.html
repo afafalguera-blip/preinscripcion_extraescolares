@@ -257,9 +257,21 @@
             // Most popular activity
             const activityCounts = {};
             allInscriptions.forEach(ins => {
-                ins.activities.forEach(activity => {
-                    activityCounts[activity] = (activityCounts[activity] || 0) + 1;
-                });
+                if (ins.students && Array.isArray(ins.students)) {
+                    // New format with multiple students
+                    ins.students.forEach(student => {
+                        if (student.activities && Array.isArray(student.activities)) {
+                            student.activities.forEach(activity => {
+                                activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+                            });
+                        }
+                    });
+                } else if (ins.activities && Array.isArray(ins.activities)) {
+                    // Old format with single student
+                    ins.activities.forEach(activity => {
+                        activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+                    });
+                }
             });
             
             const mostPopular = Object.entries(activityCounts)
@@ -273,7 +285,17 @@
             const activities = new Set();
             
             allInscriptions.forEach(ins => {
-                ins.activities.forEach(activity => activities.add(activity));
+                if (ins.students && Array.isArray(ins.students)) {
+                    // New format with multiple students
+                    ins.students.forEach(student => {
+                        if (student.activities && Array.isArray(student.activities)) {
+                            student.activities.forEach(activity => activities.add(activity));
+                        }
+                    });
+                } else if (ins.activities && Array.isArray(ins.activities)) {
+                    // Old format with single student
+                    ins.activities.forEach(activity => activities.add(activity));
+                }
             });
 
             activityFilter.innerHTML = '<option value="">Todas las actividades</option>';
