@@ -80,6 +80,46 @@
             appearance: none;
         }
         
+        /* Ensure select elements work properly */
+        select {
+            -webkit-appearance: menulist;
+            -moz-appearance: menulist;
+            appearance: menulist;
+            cursor: pointer;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        /* Override any potential Tailwind interference */
+        select:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        /* Ensure select elements are clickable and not blocked */
+        select {
+            position: relative !important;
+            z-index: 10 !important;
+            pointer-events: auto !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            user-select: none !important;
+        }
+        
+        /* Override Tailwind classes that might interfere */
+        select.mt-1.block.w-full.px-3.py-2.border.border-gray-300.bg-white.rounded-md.shadow-sm {
+            -webkit-appearance: menulist !important;
+            -moz-appearance: menulist !important;
+            appearance: menulist !important;
+        }
+        
+        /* Make sure no parent elements are blocking clicks */
+        .grid, .flex {
+            pointer-events: auto;
+        }
+        
         /* Fix for Safari flexbox issues */
         .flex {
             display: -webkit-flex;
@@ -347,15 +387,15 @@
                     </div>
                      <div>
                         <label for="parent-dni" class="block text-sm font-medium text-gray-700" data-lang="parent_dni">DNI/NIF</label>
-                        <input type="text" id="parent-dni" name="parent_dni" required pattern="[0-9]{8}[A-Za-z]" title="El DNI debe tener 8 dígitos seguidos de una letra" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="text" id="parent-dni" name="parent_dni" required pattern="[0-9]{8}[A-Za-z]" title="El DNI debe tener 8 dígitos seguidos de la letra correcta (ej: 12345678A)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-phone-1" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_1">Telèfon de Contacte 1 <span class="text-red-500">*</span></label>
-                        <input type="tel" id="parent-phone-1" name="parent_phone_1" required pattern="[0-9]{9}" title="El teléfono debe tener 9 dígitos" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="tel" id="parent-phone-1" name="parent_phone_1" required pattern="[6-9][0-9]{8}" title="El teléfono debe ser un móvil español válido (9 dígitos empezando por 6, 7, 8 o 9)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-phone-2" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_2">Telèfon de Contacte 2 <span class="text-gray-400" data-lang="optional">(Opcional)</span></label>
-                        <input type="tel" id="parent-phone-2" name="parent_phone_2" pattern="[0-9]{9}" title="El teléfono debe tener 9 dígitos" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <input type="tel" id="parent-phone-2" name="parent_phone_2" pattern="[6-9][0-9]{8}" title="El teléfono debe ser un móvil español válido (9 dígitos empezando por 6, 7, 8 o 9)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-email-1" class="block text-sm font-medium text-gray-700" data-lang="parent_email_1">Email de Contacte 1 <span class="text-red-500">*</span></label>
@@ -474,6 +514,39 @@
                 const dayB = dayOrder[b.dayLangKey] || 6;
                 return dayA - dayB;
             });
+        };
+
+        // Función para validar DNI español
+        const validateDNI = (dni) => {
+            if (!dni || typeof dni !== 'string') return false;
+            
+            // Verificar formato: 8 dígitos + 1 letra
+            const dniRegex = /^[0-9]{8}[A-Za-z]$/;
+            if (!dniRegex.test(dni)) return false;
+            
+            // Extraer números y letra
+            const numbers = dni.substring(0, 8);
+            const letter = dni.substring(8, 9).toUpperCase();
+            
+            // Calcular letra correcta
+            const letterIndex = parseInt(numbers) % 23;
+            const correctLetters = 'TRWAGMYFPDXBNJZSQVHLCKE';
+            const correctLetter = correctLetters.charAt(letterIndex);
+            
+            return letter === correctLetter;
+        };
+
+        // Función para validar teléfono móvil español
+        const validatePhone = (phone) => {
+            if (!phone || typeof phone !== 'string') return false;
+            
+            // Verificar que tenga 9 dígitos
+            const phoneRegex = /^[0-9]{9}$/;
+            if (!phoneRegex.test(phone)) return false;
+            
+            // Verificar que empiece por 6, 7, 8 o 9 (móviles españoles)
+            const firstDigit = phone.charAt(0);
+            return ['6', '7', '8', '9'].includes(firstDigit);
         };
 
         const allActivities = {
@@ -813,10 +886,13 @@
 
             document.querySelectorAll('.activity-card').forEach(card => {
                 card.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const checkbox = card.querySelector('input[type="checkbox"]');
-                    checkbox.checked = !checkbox.checked;
-                    card.classList.toggle('selected', checkbox.checked);
+                    // Only prevent default if clicking on the card itself, not on form elements
+                    if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+                        e.preventDefault();
+                        const checkbox = card.querySelector('input[type="checkbox"]');
+                        checkbox.checked = !checkbox.checked;
+                        card.classList.toggle('selected', checkbox.checked);
+                    }
                 });
             });
         }
@@ -842,7 +918,68 @@
             document.querySelectorAll('.form-section').forEach(section => {
                 section.classList.remove('active');
             });
+            
+            // Validación en tiempo real
+            setupRealTimeValidation();
         });
+
+        // Función para configurar validación en tiempo real
+        const setupRealTimeValidation = () => {
+            const dniInput = document.getElementById('parent-dni');
+            const phone1Input = document.getElementById('parent-phone-1');
+            const phone2Input = document.getElementById('parent-phone-2');
+            
+            // Validación DNI en tiempo real
+            dniInput.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length >= 9) { // Solo validar cuando esté completo
+                    if (validateDNI(value)) {
+                        e.target.style.borderColor = '#10b981'; // Verde
+                        e.target.style.borderWidth = '2px';
+                    } else {
+                        e.target.style.borderColor = '#ef4444'; // Rojo
+                        e.target.style.borderWidth = '2px';
+                    }
+                } else {
+                    e.target.style.borderColor = '#d1d5db'; // Gris normal
+                    e.target.style.borderWidth = '1px';
+                }
+            });
+            
+            // Validación teléfono 1 en tiempo real
+            phone1Input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length >= 9) { // Solo validar cuando esté completo
+                    if (validatePhone(value)) {
+                        e.target.style.borderColor = '#10b981'; // Verde
+                        e.target.style.borderWidth = '2px';
+                    } else {
+                        e.target.style.borderColor = '#ef4444'; // Rojo
+                        e.target.style.borderWidth = '2px';
+                    }
+                } else {
+                    e.target.style.borderColor = '#d1d5db'; // Gris normal
+                    e.target.style.borderWidth = '1px';
+                }
+            });
+            
+            // Validación teléfono 2 en tiempo real
+            phone2Input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length >= 9) { // Solo validar cuando esté completo
+                    if (validatePhone(value)) {
+                        e.target.style.borderColor = '#10b981'; // Verde
+                        e.target.style.borderWidth = '2px';
+                    } else {
+                        e.target.style.borderColor = '#ef4444'; // Rojo
+                        e.target.style.borderWidth = '2px';
+                    }
+                } else {
+                    e.target.style.borderColor = '#d1d5db'; // Gris normal
+                    e.target.style.borderWidth = '1px';
+                }
+            });
+        };
 
         const student1Course = document.getElementById('student1-course');
         const student2Course = document.getElementById('student2-course');
@@ -960,26 +1097,24 @@
             // Validación de formato de teléfono
             const phone1 = document.getElementById('parent-phone-1').value;
             const phone2 = document.getElementById('parent-phone-2').value;
-            const phonePattern = /^[0-9]{9}$/;
             
-            if (!phonePattern.test(phone1)) {
-                showStatus('El teléfono de contacto 1 debe tener 9 dígitos', 'error');
+            if (!validatePhone(phone1)) {
+                showStatus('El teléfono de contacto 1 debe ser un número móvil español válido (9 dígitos empezando por 6, 7, 8 o 9)', 'error');
                 document.getElementById('parent-phone-1').focus();
                 return;
             }
             
-            if (phone2 && !phonePattern.test(phone2)) {
-                showStatus('El teléfono de contacto 2 debe tener 9 dígitos', 'error');
+            if (phone2 && !validatePhone(phone2)) {
+                showStatus('El teléfono de contacto 2 debe ser un número móvil español válido (9 dígitos empezando por 6, 7, 8 o 9)', 'error');
                 document.getElementById('parent-phone-2').focus();
                 return;
             }
             
             // Validación de formato de DNI
             const dni = document.getElementById('parent-dni').value;
-            const dniPattern = /^[0-9]{8}[A-Za-z]$/;
             
-            if (!dniPattern.test(dni)) {
-                showStatus('El DNI debe tener 8 dígitos seguidos de una letra', 'error');
+            if (!validateDNI(dni)) {
+                showStatus('El DNI debe tener 8 dígitos seguidos de la letra correcta (ej: 12345678A)', 'error');
                 document.getElementById('parent-dni').focus();
                 return;
             }
