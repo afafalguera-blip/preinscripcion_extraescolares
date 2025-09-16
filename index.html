@@ -33,6 +33,12 @@
             border: 2px solid transparent;
             transition: all 0.2s ease-in-out;
         }
+        .language-selector img {
+            width: 30px; /* Ajusta el tamaño según tus necesidades */
+            height: auto;
+            margin: 0 5px; /* Añade un pequeño espacio entre las banderas */
+            border-radius: 50%; /* Opcional: para mostrar las banderas en formato circular */
+        }
         /* Modal styles */
         .modal-overlay {
             transition: opacity 0.3s ease;
@@ -61,13 +67,13 @@
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
         
         <div class="flex justify-end items-center mb-4">
-            <div class="text-right">
-                <button id="lang-ca" class="lang-btn active p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <span class="text-2xl">🇪🇸</span>
+            <div class="language-selector text-right">
+                <button id="lang-ca" class="lang-btn active p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors" title="Català">
+                    <img src="https://flagcdn.com/w40/es-ct.png" alt="Bandera de Cataluña" class="flag-img">
                     <span class="text-sm font-medium">Català</span>
                 </button>
-                <button id="lang-es" class="lang-btn text-gray-600 p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <span class="text-2xl">🇪🇸</span>
+                <button id="lang-es" class="lang-btn text-gray-600 p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors" title="Español">
+                    <img src="https://flagcdn.com/w40/es.png" alt="Bandera de España" class="flag-img">
                     <span class="text-sm font-medium">Español</span>
                 </button>
             </div>
@@ -121,13 +127,13 @@
                 <div class="mt-4 text-sm text-blue-700 bg-blue-50 p-3 rounded-lg">
                     <p class="font-semibold" data-lang="schedule_info_title">Horaris d'Activitats:</p>
                     <p data-lang="schedule_general">• Activitats generals: 16:30h a 18:00h</p>
-                    <p data-lang="schedule_english">• Classes d'Anglès: 16:30h a 17:45h</p>
+                    <p data-lang="schedule_english">• Classes d'Anglès (Primària): 16:30h a 17:45h</p>
                     <p data-lang="schedule_timbals">• Timbals: 17:30h a 19:00h</p>
                 </div>
                 
                 <!-- Important notice for English classes -->
                 <div class="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 p-4 rounded-lg">
-                    <p class="font-semibold" data-lang="english_payment_notice_title">⚠️ AVÍS IMPORTANT - Classes d'Anglès:</p>
+                    <p class="font-semibold" data-lang="english_payment_notice_title">⚠️ AVÍS IMPORTANT - Classes d'Anglès (Primària):</p>
                     <p data-lang="english_payment_notice_body">Les classes d'Anglès dels dimarts i dimecres NO es paguen a través de l'AFA. El pagament es gestiona directament amb l'empresa d'anglès mitjançant un enllaç que l'AFA facilitarà una vegada es confirmin les classes.</p>
                 </div>
 
@@ -468,9 +474,9 @@
                 pricing_discount_body: "Si es realitzen dues extraescolars iguals a la mateixa setmana, el preu final seria 36€ mensuals per a socis, i 40€ mensuals per a NO socis.",
                 schedule_info_title: "Horaris d'Activitats:",
                 schedule_general: "• Activitats generals: 16:30h a 18:00h",
-                schedule_english: "• Classes d'Anglès: 16:30h a 17:45h",
+                schedule_english: "• Classes d'Anglès (Primària): 16:30h a 17:45h",
                 schedule_timbals: "• Timbals: 17:30h a 19:00h",
-                english_payment_notice_title: "⚠️ AVÍS IMPORTANT - Classes d'Anglès:",
+                english_payment_notice_title: "⚠️ AVÍS IMPORTANT - Classes d'Anglès (Primària):",
                 english_payment_notice_body: "Les classes d'Anglès dels dimarts i dimecres NO es paguen a través de l'AFA. El pagament es gestiona directament amb l'empresa d'anglès.",
                 english_payment_warning: "⚠️ No es paga per AFA",
                 payment_info_title: "Informació de Pagament",
@@ -569,9 +575,9 @@
                 pricing_discount_body: "Si se realizan dos extraescolares iguales en la misma semana, el precio final sería 36€ mensuales para socios, y 40€ mensuales para NO socios.",
                 schedule_info_title: "Horarios de Actividades:",
                 schedule_general: "• Actividades generales: 16:30h a 18:00h",
-                schedule_english: "• Clases de Inglés: 16:30h a 17:45h",
+                schedule_english: "• Clases de Inglés (Primaria): 16:30h a 17:45h",
                 schedule_timbals: "• Timbales: 17:30h a 19:00h",
-                english_payment_notice_title: "⚠️ AVISO IMPORTANTE - Clases de Inglés:",
+                english_payment_notice_title: "⚠️ AVISO IMPORTANTE - Clases de Inglés (Primaria):",
                 english_payment_notice_body: "Las clases de Inglés de los martes y miércoles NO se pagan a través del AFA. El pago se gestiona directamente con la empresa de inglés mediante un enlace que el AFA facilitará una vez se confirmen las clases.",
                 english_payment_warning: "⚠️ No se paga por AFA",
                 payment_info_title: "Información de Pago",
