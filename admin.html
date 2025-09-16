@@ -50,6 +50,9 @@
                         <button id="export-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                             Exportar CSV
                         </button>
+                        <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                            Cerrar Sesión
+                        </button>
                     </div>
                 </div>
             </div>
@@ -198,6 +201,39 @@
     </div>
 
     <script type="module">
+        // Verificar autenticación antes de cargar el panel
+        function checkAuthentication() {
+            const isAuthenticated = sessionStorage.getItem('admin_authenticated');
+            const loginTime = sessionStorage.getItem('admin_login_time');
+            
+            if (isAuthenticated !== 'true' || !loginTime) {
+                window.location.href = 'admin_login.html';
+                return false;
+            }
+            
+            // Verificar que la sesión no haya expirado (24 horas)
+            const loginDate = new Date(loginTime);
+            const now = new Date();
+            const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+            
+            if (hoursDiff >= 24) {
+                // Sesión expirada
+                sessionStorage.removeItem('admin_authenticated');
+                sessionStorage.removeItem('admin_user');
+                sessionStorage.removeItem('admin_login_time');
+                window.location.href = 'admin_login.html';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Verificar autenticación al cargar la página
+        if (!checkAuthentication()) {
+            // Redirigir a login si no está autenticado
+            document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen"><div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p class="text-gray-600">Redirigiendo al login...</p></div></div>';
+        }
+
         const { createClient } = supabase;
         
         // Configuración de Supabase (usa las mismas credenciales)
@@ -604,12 +640,49 @@
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
 
             filteredInscriptions = allInscriptions.filter(inscription => {
-                const matchesCourse = !courseFilter || inscription.student_course === courseFilter;
-                const matchesActivity = !activityFilter || inscription.activities.includes(activityFilter);
-                const matchesSearch = !searchTerm || 
-                    inscription.student_name.toLowerCase().includes(searchTerm) ||
-                    inscription.student_surname.toLowerCase().includes(searchTerm) ||
-                    inscription.parent_name.toLowerCase().includes(searchTerm);
+                // Check course filter
+                let matchesCourse = true;
+                if (courseFilter) {
+                    if (inscription.students && Array.isArray(inscription.students)) {
+                        // New format with multiple students
+                        matchesCourse = inscription.students.some(student => student.course === courseFilter);
+                    } else {
+                        // Old format with single student
+                        matchesCourse = inscription.student_course === courseFilter;
+                    }
+                }
+
+                // Check activity filter
+                let matchesActivity = true;
+                if (activityFilter) {
+                    if (inscription.students && Array.isArray(inscription.students)) {
+                        // New format with multiple students
+                        matchesActivity = inscription.students.some(student => 
+                            student.activities && student.activities.includes(activityFilter)
+                        );
+                    } else {
+                        // Old format with single student
+                        matchesActivity = inscription.activities && inscription.activities.includes(activityFilter);
+                    }
+                }
+
+                // Check search term
+                let matchesSearch = true;
+                if (searchTerm) {
+                    if (inscription.students && Array.isArray(inscription.students)) {
+                        // New format with multiple students
+                        matchesSearch = inscription.students.some(student => 
+                            student.name.toLowerCase().includes(searchTerm) ||
+                            student.surname.toLowerCase().includes(searchTerm)
+                        ) || inscription.parent_name.toLowerCase().includes(searchTerm);
+                    } else {
+                        // Old format with single student
+                        matchesSearch = 
+                            (inscription.student_name && inscription.student_name.toLowerCase().includes(searchTerm)) ||
+                            (inscription.student_surname && inscription.student_surname.toLowerCase().includes(searchTerm)) ||
+                            inscription.parent_name.toLowerCase().includes(searchTerm);
+                    }
+                }
 
                 return matchesCourse && matchesActivity && matchesSearch;
             });
@@ -650,6 +723,16 @@
         window.changePage = changePage;
         window.viewDetails = viewDetails;
         window.deleteInscription = deleteInscription;
+        window.logout = logout;
+
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar la sesión?')) {
+                sessionStorage.removeItem('admin_authenticated');
+                sessionStorage.removeItem('admin_user');
+                sessionStorage.removeItem('admin_login_time');
+                window.location.href = 'admin_login.html';
+            }
+        }
     </script>
 </body>
 </html>
