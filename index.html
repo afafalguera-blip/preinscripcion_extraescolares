@@ -3,1003 +3,1339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-lang="page_title">Formulari Preinscripció Extraescolars 2025-26 | AFA Escola Falguera</title>
+    <title>Panel de Administración - AFA Escola Falguera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .form-section { display: none; }
-        .form-section.active { display: block; }
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3498db;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .lang-btn.active {
-            font-weight: bold;
-            color: #1d4ed8; /* text-blue-800 */
-            background-color: #eff6ff; /* bg-blue-50 */
-            border: 2px solid #3b82f6; /* border-blue-500 */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
         }
-        .lang-btn {
-            border: 2px solid transparent;
-            transition: all 0.2s ease-in-out;
-        }
-        /* Modal styles */
-        .modal-overlay {
-            transition: opacity 0.3s ease;
-        }
-        .modal-container {
-            transition: transform 0.3s ease;
-        }
-        /* New Activity Card Styles */
-        .activity-card {
-            transition: all 0.2s ease-in-out;
-            border: 2px solid #e5e7eb; /* border-gray-200 */
-        }
-        .activity-card.selected {
-            border-color: #3b82f6; /* border-blue-500 */
-            background-color: #eff6ff; /* bg-blue-50 */
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
-        .activity-card input[type="checkbox"] {
-            display: none;
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-confirmed { background-color: #d1fae5; color: #065f46; }
+        .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+        .student-suspended {
+            opacity: 0.6;
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            border-width: 2px;
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
-        
-        <div class="flex justify-end items-center mb-4">
-            <div class="text-right">
-                <button id="lang-ca" class="lang-btn active p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <span class="text-2xl">🇪🇸</span>
-                    <span class="text-sm font-medium">Català</span>
-                </button>
-                <button id="lang-es" class="lang-btn text-gray-600 p-2 flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <span class="text-2xl">🇪🇸</span>
-                    <span class="text-sm font-medium">Español</span>
-                </button>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Panel de Administración</h1>
+                        <p class="text-sm text-gray-600">AFA Escola Falguera - Gestión de Inscripciones</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="refresh-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <span id="refresh-text">Actualizar</span>
+                            <div id="refresh-loader" class="loader hidden"></div>
+                        </button>
+                        <button id="export-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            Exportar CSV
+                        </button>
+                        <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-blue-800" data-lang="main_header">AFA Escola Falguera</h1>
-            <p class="text-lg sm:text-xl text-gray-600 mt-2" data-lang="main_subheader">Formulari de Preinscripció per a Activitats Extraescolars 2025-26</p>
         </header>
 
-        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg mb-8 text-center">
-            <p class="font-semibold" data-lang="important_info_title">Informació important:</p>
-            <p class="text-sm" data-lang="important_info_body">Les activitats ofertes només es duran a terme si hi ha un nombre suficient d'alumnes. En cas que el nombre d'inscrits superi l'aforament màxim, es tindrà en compte l'ordre d'inscripció.</p>
-        </div>
-
-        <!-- Main Form -->
-        <form id="inscription-form" class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg space-y-8">
-            
-            <!-- Pricing Section -->
-             <fieldset>
-                <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="pricing_legend">Preus i Mètode de Pagament</legend>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold" data-lang="pricing_general_title">Activitats Generals</h4>
-                        <p class="text-sm text-gray-500" data-lang="pricing_general_hours">16:30h a 18:00h</p>
-                        <p class="mt-2"><span class="font-bold text-lg text-blue-700">20€</span> <span data-lang="pricing_socis">/mes socis</span></p>
-                        <p><span class="font-bold text-lg text-gray-700">25€</span> <span data-lang="pricing_no_socis">/mes no socis</span></p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="font-semibold" data-lang="pricing_timbals_title">Timbals</h4>
-                        <p class="text-sm text-gray-500" data-lang="pricing_timbals_hours">17:30h a 19:00h (Divendres)</p>
-                        <p class="mt-2"><span class="font-bold text-lg text-blue-700">14€</span> <span data-lang="pricing_socis">/mes socis</span></p>
-                        <p><span class="font-bold text-lg text-gray-700">18€</span> <span data-lang="pricing_no_socis">/mes no socis</span></p>
-                    </div>
-                </div>
-                <div class="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    <p><strong data-lang="pricing_discount_title">Descompte:</strong> <span data-lang="pricing_discount_body">Si es realitzen dues extraescolars iguals a la mateixa setmana, el preu final seria 36€ mensuals per a socis, i 40€ mensuals per a NO socis.</span></p>
-                </div>
-                
-                <!-- Horarios actualizados -->
-                <div class="mt-4 text-sm text-blue-700 bg-blue-50 p-3 rounded-lg">
-                    <p class="font-semibold" data-lang="schedule_info_title">Horaris d'Activitats:</p>
-                    <p data-lang="schedule_general">• Activitats generals: 16:30h a 18:00h</p>
-                    <p data-lang="schedule_english">• Classes d'Anglès: 16:30h a 17:45h</p>
-                    <p data-lang="schedule_timbals">• Timbals: 17:30h a 19:00h</p>
-                </div>
-                
-                <!-- Important notice for English classes -->
-                <div class="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 p-4 rounded-lg">
-                    <p class="font-semibold" data-lang="english_payment_notice_title">⚠️ AVÍS IMPORTANT - Classes d'Anglès:</p>
-                    <p data-lang="english_payment_notice_body">Les classes d'Anglès dels dimarts i dimecres NO es paguen a través de l'AFA. El pagament es gestiona directament amb l'empresa d'anglès.</p>
-                </div>
-
-                <!-- Payment Info -->
-                <div class="mt-6 bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <h4 class="font-semibold text-green-800" data-lang="payment_info_title">Informació de Pagament</h4>
-                    <p class="text-sm text-green-700 mt-2" data-lang="payment_info_body">Totes les activitats són de pagament mensual per transferència bancària abans del dia 10 del mes en curs.</p>
-                    <div class="mt-3 flex flex-wrap items-center bg-white p-2 rounded-md border">
-                        <span class="font-mono text-gray-800 flex-grow" id="iban-account">ES22 0081 1604 7400 0103 8208</span>
-                        <button type="button" id="copy-iban-btn" class="ml-4 bg-green-600 text-white px-3 py-1 text-xs font-semibold rounded-md hover:bg-green-700 transition-colors" data-lang="payment_copy_iban">Copiar IBAN</button>
-                    </div>
-                    <p class="text-xs text-red-600 font-semibold mt-2" data-lang="payment_info_concept">Important! Indicar al concepte el nom de l'alumne/a i l'activitat.</p>
-                </div>
-            </fieldset>
-
-            <!-- Students Data -->
-            <fieldset>
-                <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="students_data_legend">Dades dels Alumnes</legend>
-                
-                <!-- Student 1 -->
-                <div id="student-1-section" class="bg-blue-50 p-4 rounded-lg mb-4">
-                    <h4 class="font-semibold text-blue-800 mb-4" data-lang="student_1_title">Alumne/a 1</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="student1-name" class="block text-sm font-medium text-gray-700" data-lang="student_name">Nom</label>
-                            <input type="text" id="student1-name" name="student1_name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+        <!-- Stats Cards -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-blue-100 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
                         </div>
-                        <div>
-                            <label for="student1-surname" class="block text-sm font-medium text-gray-700" data-lang="student_surname">Cognoms</label>
-                            <input type="text" id="student1-surname" name="student1_surname" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label for="student1-course" class="block text-sm font-medium text-gray-700" data-lang="student_course">Curs <span class="text-red-500">*</span></label>
-                            <select id="student1-course" name="student1_course" required class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                <option value="" disabled selected data-lang="select_course">Selecciona un curs</option>
-                                <option value="I3">I3</option><option value="I4">I4</option><option value="I5">I5</option>
-                                <option value="1PRI" data-lang="course_1pri">1r Primària</option><option value="2PRI" data-lang="course_2pri">2n Primària</option><option value="3PRI" data-lang="course_3pri">3r Primària</option>
-                                <option value="4PRI" data-lang="course_4pri">4t Primària</option><option value="5PRI" data-lang="course_5pri">5è Primària</option><option value="6PRI" data-lang="course_6pri">6è Primària</option>
-                            </select>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Inscripciones</p>
+                            <p id="total-inscriptions" class="text-2xl font-semibold text-gray-900">-</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Add Second Student Button -->
-                <div class="text-center mb-4">
-                    <button type="button" id="add-second-student" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors" data-lang="add_second_student">
-                        + Afegir segon alumne/a
-                    </button>
-                </div>
-
-                <!-- Student 2 (Hidden by default) -->
-                <div id="student-2-section" class="bg-green-50 p-4 rounded-lg mb-4 hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-semibold text-green-800" data-lang="student_2_title">Alumne/a 2</h4>
-                        <button type="button" id="remove-second-student" class="text-red-600 hover:text-red-800 text-sm" data-lang="remove_student">
-                            ✕ Eliminar
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="student2-name" class="block text-sm font-medium text-gray-700" data-lang="student_name">Nom</label>
-                            <input type="text" id="student2-name" name="student2_name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
                         </div>
-                        <div>
-                            <label for="student2-surname" class="block text-sm font-medium text-gray-700" data-lang="student_surname">Cognoms</label>
-                            <input type="text" id="student2-surname" name="student2_surname" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label for="student2-course" class="block text-sm font-medium text-gray-700" data-lang="student_course">Curs</label>
-                            <select id="student2-course" name="student2_course" class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                <option value="" disabled selected data-lang="select_course">Selecciona un curs</option>
-                                <option value="I3">I3</option><option value="I4">I4</option><option value="I5">I5</option>
-                                <option value="1PRI" data-lang="course_1pri">1r Primària</option><option value="2PRI" data-lang="course_2pri">2n Primària</option><option value="3PRI" data-lang="course_3pri">3r Primària</option>
-                                <option value="4PRI" data-lang="course_4pri">4t Primària</option><option value="5PRI" data-lang="course_5pri">5è Primària</option><option value="6PRI" data-lang="course_6pri">6è Primària</option>
-                            </select>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Socios AFA</p>
+                            <p id="afa-members" class="text-2xl font-semibold text-gray-900">-</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Add Third Student Button -->
-                <div class="text-center mb-4">
-                    <button type="button" id="add-third-student" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors hidden" data-lang="add_third_student">
-                        + Afegir tercer alumne/a
-                    </button>
-                </div>
-
-                <!-- Student 3 (Hidden by default) -->
-                <div id="student-3-section" class="bg-purple-50 p-4 rounded-lg mb-4 hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-semibold text-purple-800" data-lang="student_3_title">Alumne/a 3</h4>
-                        <button type="button" id="remove-third-student" class="text-red-600 hover:text-red-800 text-sm" data-lang="remove_student">
-                            ✕ Eliminar
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="student3-name" class="block text-sm font-medium text-gray-700" data-lang="student_name">Nom</label>
-                            <input type="text" id="student3-name" name="student3_name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-yellow-100 rounded-lg">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
                         </div>
-                        <div>
-                            <label for="student3-surname" class="block text-sm font-medium text-gray-700" data-lang="student_surname">Cognoms</label>
-                            <input type="text" id="student3-surname" name="student3_surname" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label for="student3-course" class="block text-sm font-medium text-gray-700" data-lang="student_course">Curs</label>
-                            <select id="student3-course" name="student3_course" class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                <option value="" disabled selected data-lang="select_course">Selecciona un curs</option>
-                                <option value="I3">I3</option><option value="I4">I4</option><option value="I5">I5</option>
-                                <option value="1PRI" data-lang="course_1pri">1r Primària</option><option value="2PRI" data-lang="course_2pri">2n Primària</option><option value="3PRI" data-lang="course_3pri">3r Primària</option>
-                                <option value="4PRI" data-lang="course_4pri">4t Primària</option><option value="5PRI" data-lang="course_5pri">5è Primària</option><option value="6PRI" data-lang="course_6pri">6è Primària</option>
-                            </select>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">No Socios</p>
+                            <p id="non-members" class="text-2xl font-semibold text-gray-900">-</p>
                         </div>
                     </div>
                 </div>
-            </fieldset>
 
-            <!-- Activities Section -->
-            <fieldset>
-                <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="activities_legend">Activitats Extraescolars</legend>
-                <p class="text-sm text-gray-600 mb-4" data-lang="activities_subtitle">Selecciona les activitats desitjades per a cada alumne/a (mínim una). Les opcions apareixeran quan triïs un curs.</p>
-                
-                <!-- Student 1 Activities -->
-                <div id="student1-activities" class="mb-6">
-                    <h4 class="font-semibold text-blue-800 mb-4" data-lang="student1_activities_title">Activitats per a l'Alumne/a 1</h4>
-                    <div id="activities-infantil-1" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="infantil_options">Opcions per a Infantil (I3-I5)</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                    <div id="activities-primaria1-1" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="primaria1_options">Opcions per a 1r, 2n i 3r de Primària</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                    <div id="activities-primaria2-1" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="primaria2_options">Opcions per a 4t, 5è i 6è de Primària</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                </div>
-
-                <!-- Student 2 Activities (Hidden by default) -->
-                <div id="student2-activities" class="mb-6 hidden">
-                    <h4 class="font-semibold text-green-800 mb-4" data-lang="student2_activities_title">Activitats per a l'Alumne/a 2</h4>
-                    <div id="activities-infantil-2" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="infantil_options">Opcions per a Infantil (I3-I5)</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                    <div id="activities-primaria1-2" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="primaria1_options">Opcions per a 1r, 2n i 3r de Primària</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                    <div id="activities-primaria2-2" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="primaria2_options">Opcions per a 4t, 5è i 6è de Primària</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                </div>
-
-                <!-- Student 3 Activities (Hidden by default) -->
-                <div id="student3-activities" class="mb-6 hidden">
-                    <h4 class="font-semibold text-purple-800 mb-4" data-lang="student3_activities_title">Activitats per a l'Alumne/a 3</h4>
-                    <div id="activities-infantil-3" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="infantil_options">Opcions per a Infantil (I3-I5)</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                    <div id="activities-primaria1-3" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="primaria1_options">Opcions per a 1r, 2n i 3r de Primària</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                    <div id="activities-primaria2-3" class="form-section space-y-4">
-                        <h5 class="font-medium text-gray-700" data-lang="primaria2_options">Opcions per a 4t, 5è i 6è de Primària</h5>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
-                    </div>
-                </div>
-            </fieldset>
-
-            <!-- Parent/Guardian Data -->
-            <fieldset>
-                <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="parent_data_legend">Dades del Pare/Mare/Tutor/a</legend>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="parent-name" class="block text-sm font-medium text-gray-700" data-lang="parent_name">Nom i Cognoms</label>
-                        <input type="text" id="parent-name" name="parent_name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                     <div>
-                        <label for="parent-dni" class="block text-sm font-medium text-gray-700" data-lang="parent_dni">DNI/NIF</label>
-                        <input type="text" id="parent-dni" name="parent_dni" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="parent-phone-1" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_1">Telèfon de Contacte 1 <span class="text-red-500">*</span></label>
-                        <input type="tel" id="parent-phone-1" name="parent_phone_1" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="parent-phone-2" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_2">Telèfon de Contacte 2 <span class="text-gray-400" data-lang="optional">(Opcional)</span></label>
-                        <input type="tel" id="parent-phone-2" name="parent_phone_2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="parent-email-1" class="block text-sm font-medium text-gray-700" data-lang="parent_email_1">Email de Contacte 1 <span class="text-red-500">*</span></label>
-                        <input type="email" id="parent-email-1" name="parent_email_1" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="parent-email-2" class="block text-sm font-medium text-gray-700" data-lang="parent_email_2">Email de Contacte 2 <span class="text-gray-400" data-lang="optional">(Opcional)</span></label>
-                        <input type="email" id="parent-email-2" name="parent_email_2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700" data-lang="afa_member_question">Sou socis de l'AFA? <span class="text-red-500">*</span></label>
-                        <div class="mt-2 flex items-center space-x-4">
-                            <label class="flex items-center"><input type="radio" name="afa_member" value="true" required class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="yes">Sí</span></label>
-                            <label class="flex items-center"><input type="radio" name="afa_member" value="false" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="no">No</span></label>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-purple-100 rounded-lg">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Actividades Populares</p>
+                            <p id="popular-activity" class="text-lg font-semibold text-gray-900">-</p>
                         </div>
                     </div>
                 </div>
-            </fieldset>
-
-            <!-- Health & Authorizations -->
-            <fieldset>
-                 <legend class="text-xl font-semibold text-gray-900 border-b-2 border-blue-200 pb-2 mb-4" data-lang="auth_legend">Informació Addicional i Autoritzacions</legend>
-                 <div>
-                    <label for="health-info" class="block text-sm font-medium text-gray-700" data-lang="health_question">L'alumne/a té alguna malaltia crònica, al·lèrgia o pren medicació?</label>
-                    <textarea id="health-info" name="health_info" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" data-lang-placeholder="health_placeholder"></textarea>
-                 </div>
-                 
-                 <div class="mt-6">
-                    <label class="block text-sm font-medium text-gray-700">
-                        <span data-lang="image_auth_title">Autorització de drets d'imatge</span> <span class="text-red-500">*</span>
-                        <button type="button" id="image-info-btn" class="ml-2 text-blue-600 hover:text-blue-800 font-bold">(i)</button>
-                    </label>
-                    <p class="text-xs text-gray-500 mb-2" data-lang="image_auth_subtitle">Per a l'ús d'imatges en fotografies i/o vídeos realitzats per l'AFA amb la finalitat d'exposar-les a la nostra web i xarxes socials.</p>
-                    <div class="mt-2 flex items-center space-x-4">
-                        <label class="flex items-center"><input type="radio" name="image_auth_consent" value="si" required class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="image_auth_yes">Sí, autoritzo el tractament de la imatge.</span></label>
-                        <label class="flex items-center"><input type="radio" name="image_auth_consent" value="no" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="image_auth_no">No, no autoritzo el tractament de la imatge.</span></label>
-                    </div>
-                 </div>
-
-                 <div class="mt-6">
-                    <label class="block text-sm font-medium text-gray-700" data-lang="exit_auth_title">Autorització de sortida de l'activitat <span class="text-red-500">*</span></label>
-                     <div class="mt-2">
-                         <p class="text-sm text-gray-700 mb-2" data-lang="exit_auth_question">L'alumne/a pot marxar sol/sola en finalitzar l'activitat extraescolar?</p>
-                        <div class="flex items-center space-x-4">
-                            <label class="flex items-center"><input type="radio" name="can_leave_alone" value="true" required class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="yes">Sí</span></label>
-                            <label class="flex items-center"><input type="radio" name="can_leave_alone" value="false" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 mr-2"><span data-lang="no">No</span></label>
-                        </div>
-                     </div>
-                     <div class="mt-4">
-                        <label for="authorized_pickup" class="block text-sm font-medium text-gray-700" data-lang="authorized_pickup_label">Persones autoritzades a recollir l'infant (Nom, Cognoms i DNI)</label>
-                        <textarea id="authorized_pickup" name="authorized_pickup" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" data-lang-placeholder="authorized_pickup_placeholder"></textarea>
-                     </div>
-                 </div>
-
-                 <div class="mt-6 space-y-4">
-                    <div class="flex items-start">
-                        <input id="conditions-accepted" name="conditions_accepted" type="checkbox" required class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1">
-                        <label for="conditions-accepted" class="ml-3 block text-sm text-gray-700"><span data-lang="conditions_accepted_label">He llegit i accepto les</span> <button type="button" id="conditions-btn" class="text-blue-600 hover:underline font-medium" data-lang="conditions_link">condicions de les extraescolars i acollida</button>. <span class="text-red-500">*</span></label>
-                    </div>
-                 </div>
-            </fieldset>
-            
-            <!-- Submission -->
-            <div class="pt-4">
-                <button type="submit" id="submit-button" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
-                    <span id="submit-text" data-lang="submit_button">Enviar Preinscripció</span>
-                    <div id="submit-loader" class="loader hidden"></div>
-                </button>
             </div>
-        </form>
 
-        <!-- Status Messages -->
-        <div id="status-message" class="mt-6 text-center"></div>
+            <!-- Filters -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por curso:</label>
+                        <select id="course-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                            <option value="">Todos los cursos</option>
+                            <option value="I3">I3</option>
+                            <option value="I4">I4</option>
+                            <option value="I5">I5</option>
+                            <option value="1PRI">1º Primaria</option>
+                            <option value="2PRI">2º Primaria</option>
+                            <option value="3PRI">3º Primaria</option>
+                            <option value="4PRI">4º Primaria</option>
+                            <option value="5PRI">5º Primaria</option>
+                            <option value="6PRI">6º Primaria</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por actividad:</label>
+                        <select id="activity-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                            <option value="">Todas las actividades</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado:</label>
+                        <select id="status-filter" class="border border-gray-300 rounded-md px-3 py-2">
+                            <option value="active">Solo Activos</option>
+                            <option value="suspended">Solo Suspendidos</option>
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Buscar:</label>
+                        <input type="text" id="search-input" placeholder="Nombre del alumno..." class="border border-gray-300 rounded-md px-3 py-2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inscriptions Table -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Lista de Inscripciones</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alumno</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Curso</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actividades</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AFA</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inscriptions-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="mt-6 flex items-center justify-between">
+                <!-- Pagination controls will be added here -->
+            </div>
+        </div>
     </div>
 
-    <!-- Modal Structure -->
-    <div id="info-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 modal-overlay hidden opacity-0">
-        <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-2xl modal-container transform scale-95">
+    <!-- Modal for viewing full details -->
+    <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
+        <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-4xl">
             <div class="p-6">
-                <div class="flex justify-between items-start">
-                    <h3 id="modal-title" class="text-2xl font-semibold text-gray-900"></h3>
-                    <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-2xl font-semibold text-gray-900">Detalles de la Inscripción</h3>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                     </button>
                 </div>
-                <div id="modal-content" class="mt-4 text-sm text-gray-600 space-y-3 max-h-[60vh] overflow-y-auto">
-                    <!-- Content will be injected by JavaScript -->
+                <div id="modal-content" class="space-y-4">
+                    <!-- Content will be loaded here -->
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal for editing inscription -->
+    <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
+        <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-6xl">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-2xl font-semibold text-gray-900">Editar Inscripción</h3>
+                    <button id="close-edit-modal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="edit-modal-content" class="space-y-6">
+                    <!-- Content will be loaded here -->
+                </div>
+                <div class="flex justify-end space-x-4 mt-6 pt-4 border-t">
+                    <button id="cancel-edit" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="save-edit" class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Verificar autenticación INMEDIATAMENTE al cargar la página
+        function checkAuthentication() {
+            const isAuthenticated = sessionStorage.getItem('admin_authenticated');
+            const loginTime = sessionStorage.getItem('admin_login_time');
+            const userId = sessionStorage.getItem('admin_user_id');
+            
+            if (isAuthenticated !== 'true' || !loginTime || !userId) {
+                window.location.href = 'admin_login.html';
+                return false;
+            }
+            
+            // Verificar que la sesión no haya expirado (24 horas)
+            const loginDate = new Date(loginTime);
+            const now = new Date();
+            const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+            
+            if (hoursDiff >= 24) {
+                // Sesión expirada
+                sessionStorage.removeItem('admin_authenticated');
+                sessionStorage.removeItem('admin_user');
+                sessionStorage.removeItem('admin_user_id');
+                sessionStorage.removeItem('admin_login_time');
+                window.location.href = 'admin_login.html';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Verificar autenticación ANTES de mostrar cualquier contenido
+        if (!checkAuthentication()) {
+            // Ocultar todo el contenido y mostrar mensaje de redirección
+            document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen bg-gray-100"><div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p class="text-gray-600">Redirigiendo al login...</p></div></div>';
+            // Detener la ejecución del resto del script
+            throw new Error('No autorizado');
+        }
+    </script>
 
     <script type="module">
+
         const { createClient } = supabase;
+        
+        // Configuración de Supabase (usa las mismas credenciales)
+        const SUPABASE_URL = "https://zaxbtnjkidqwzqsehvld.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGJ0bmpraWRxd3pxc2VodmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMjc2NTMsImV4cCI6MjA3MzYwMzY1M30.9MNjQdeLvW_UaxZz0XQmR6jQSakzF-UzBWvdboWWHRg";
+        
         let supabaseClient;
-        let currentLang = 'ca';
+        let allInscriptions = [];
+        let filteredInscriptions = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
 
-        // =================================================================================
-        // == PAS 1: CONFIGURACIÓ DE SUPABASE                                             ==
-        // == Enganxa aquí la teva URL i la teva Anon Key de Supabase.                    ==
-        // == Aquestes dades les trobaràs a 'Project Settings' > 'API' del teu projecte.  ==
-        // =================================================================================
-        const SUPABASE_URL = "https://zaxbtnjkidqwzqsehvld.supabase.co"; // <-- ENGANXA AQUÍ LA TEVA URL
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGJ0bmpraWRxd3pxc2VodmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMjc2NTMsImV4cCI6MjA3MzYwMzY1M30.9MNjQdeLvW_UaxZz0XQmR6jQSakzF-UzBWvdboWWHRg"; // <-- ENGANXA AQUÍ LA TEVA ANON KEY
-
-
-        const allActivities = {
-             infantil: [
-                { value: "Teatre Musical en Anglès (Dimarts)", langKey: 'activity_teatre_musical_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
-                { value: "Marxa-Marxa en Anglès (Dijous)", langKey: 'activity_marxa_angles_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
-                { value: "Iniciació a Timbals (Divendres)", langKey: 'activity_timbals_iniciacio_dv', dayLangKey: 'day_dv', schedule: '17:30 - 19:00' },
-            ],
-            primaria1: [
-                { value: "Futbol (Dimarts)", langKey: 'activity_futbol_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
-                { value: "Anglès (Dimecres)", langKey: 'activity_angles_dc', dayLangKey: 'day_dc', schedule: '16:30 - 17:45' },
-                { value: "Patinatge (Dimecres)", langKey: 'activity_patinatge_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
-                { value: "Yoga (Dimecres)", langKey: 'activity_yoga_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
-                { value: "Futbol (Dijous)", langKey: 'activity_futbol_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
-                { value: "Timbals (Divendres)", langKey: 'activity_timbals_dv', dayLangKey: 'day_dv', schedule: '17:30 - 19:00' },
-            ],
-            primaria2: [
-                { value: "Anglès (Dimarts)", langKey: 'activity_angles_dt', dayLangKey: 'day_dt', schedule: '16:30 - 17:45' },
-                { value: "Futbol (Dimarts)", langKey: 'activity_futbol_dm', dayLangKey: 'day_dm', schedule: '16:30 - 18:00' },
-                { value: "Patinatge (Dimecres)", langKey: 'activity_patinatge_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
-                { value: "Yoga (Dimecres)", langKey: 'activity_yoga_dc', dayLangKey: 'day_dc', schedule: '16:30 - 18:00' },
-                { value: "Futbol (Dijous)", langKey: 'activity_futbol_dj', dayLangKey: 'day_dj', schedule: '16:30 - 18:00' },
-                { value: "Timbals (Divendres)", langKey: 'activity_timbals_dv', dayLangKey: 'day_dv', schedule: '17:30 - 19:00' },
-            ]
-        };
-
-        const translations = {
-            ca: {
-                page_title: "Formulari Preinscripció Extraescolars 2025-26 | AFA Escola Falguera",
-                main_header: "AFA Escola Falguera",
-                main_subheader: "Formulari de Preinscripció per a Activitats Extraescolars 2025-26",
-                important_info_title: "Informació important:",
-                important_info_body: "Les activitats ofertes només es duran a terme si hi ha un nombre suficient d'alumnes. En cas que el nombre d'inscrits superi l'aforament màxim, es tindrà en compte l'ordre d'inscripció.",
-                pricing_legend: "Preus i Mètode de Pagament",
-                pricing_general_title: "Activitats Generals",
-                pricing_general_hours: "16:30h a 18:00h",
-                pricing_socis: "/mes socis",
-                pricing_no_socis: "/mes no socis",
-                pricing_timbals_title: "Timbals",
-                pricing_timbals_hours: "17:30h a 19:00h (Divendres)",
-                pricing_discount_title: "Descompte:",
-                pricing_discount_body: "Si es realitzen dues extraescolars iguals a la mateixa setmana, el preu final seria 36€ mensuals per a socis, i 40€ mensuals per a NO socis.",
-                schedule_info_title: "Horaris d'Activitats:",
-                schedule_general: "• Activitats generals: 16:30h a 18:00h",
-                schedule_english: "• Classes d'Anglès: 16:30h a 17:45h",
-                schedule_timbals: "• Timbals: 17:30h a 19:00h",
-                english_payment_notice_title: "⚠️ AVÍS IMPORTANT - Classes d'Anglès:",
-                english_payment_notice_body: "Les classes d'Anglès dels dimarts i dimecres NO es paguen a través de l'AFA. El pagament es gestiona directament amb l'empresa d'anglès.",
-                english_payment_warning: "⚠️ No es paga per AFA",
-                payment_info_title: "Informació de Pagament",
-                payment_info_body: "Totes les activitats són de pagament mensual per transferència bancària abans del dia 10 del mes en curs.",
-                payment_copy_iban: "Copiar IBAN",
-                payment_copied_iban: "Copiat!",
-                payment_info_concept: "Important! Indicar al concepte el nom de l'alumne/a i l'activitat.",
-                students_data_legend: "Dades dels Alumnes",
-                student_1_title: "Alumne/a 1",
-                student_2_title: "Alumne/a 2",
-                student_3_title: "Alumne/a 3",
-                add_second_student: "+ Afegir segon alumne/a",
-                add_third_student: "+ Afegir tercer alumne/a",
-                remove_student: "✕ Eliminar",
-                student_name: "Nom",
-                student_surname: "Cognoms",
-                student_course: "Curs",
-                select_course: "Selecciona un curs",
-                course_1pri: "1r Primària", course_2pri: "2n Primària", course_3pri: "3r Primària", course_4pri: "4t Primària", course_5pri: "5è Primària", course_6pri: "6è Primària",
-                activities_legend: "Activitats Extraescolars",
-                activities_subtitle: "Selecciona les activitats desitjades per a cada alumne/a (mínim una). Les opcions apareixeran quan triïs un curs.",
-                student1_activities_title: "Activitats per a l'Alumne/a 1",
-                student2_activities_title: "Activitats per a l'Alumne/a 2",
-                student3_activities_title: "Activitats per a l'Alumne/a 3",
-                infantil_options: "Opcions per a Infantil (I3-I5)",
-                primaria1_options: "Opcions per a 1r, 2n i 3r de Primària",
-                primaria2_options: "Opcions per a 4t, 5è i 6è de Primària",
-                activity_teatre_musical_dm: "Teatre Musical en Anglès", activity_marxa_angles_dj: "Marxa-Marxa en Anglès", activity_timbals_iniciacio_dv: "Iniciació a Timbals",
-                activity_futbol_dm: "Futbol", activity_patinatge_dc: "Patinatge", activity_yoga_dc: "Yoga", activity_futbol_dj: "Futbol", activity_timbals_dv: "Timbals", activity_angles_dt: "Anglès", activity_angles_dc: "Anglès",
-                day_dl: "Dilluns", day_dt: "Dimarts", day_dm: "Dimarts", day_dc: "Dimecres", day_dj: "Dijous", day_dv: "Divendres",
-                parent_data_legend: "Dades del Pare/Mare/Tutor/a",
-                parent_name: "Nom i Cognoms", parent_dni: "DNI/NIF", parent_phone_1: "Telèfon de Contacte 1", parent_phone_2: "Telèfon de Contacte 2", parent_email_1: "Email de Contacte 1", parent_email_2: "Email de Contacte 2",
-                optional: "(Opcional)",
-                afa_member_question: "Sou socis de l'AFA?",
-                yes: "Sí", no: "No",
-                auth_legend: "Informació Addicional i Autoritzacions",
-                health_question: "L'alumne/a té alguna malaltia crònica, al·lèrgia o pren medicació?",
-                health_placeholder: "Si no hi ha res a indicar, deixa-ho en blanc.",
-                image_auth_title: "Autorització de drets d'imatge",
-                image_auth_subtitle: "Per a l'ús d'imatges en fotografies i/o vídeos realitzats per l'AFA amb la finalitat d'exposar-les a la nostra web i xarxes socials.",
-                image_auth_yes: "Sí, autoritzo el tractament de la imatge.", image_auth_no: "No, no autoritzo el tractament de la imatge.",
-                exit_auth_title: "Autorització de sortida de l'activitat",
-                exit_auth_question: "L'alumne/a pot marxar sol/sola en finalitzar l'activitat extraescolar?",
-                authorized_pickup_label: "Persones autoritzades a recollir l'infant (Nom, Cognoms i DNI)",
-                authorized_pickup_placeholder: "Si pot marxar sol/a, o només el recullen els tutors legals, deixa aquest camp en blanc.",
-                conditions_accepted_label: "He llegit i accepto les",
-                conditions_link: "condicions de les extraescolars i acollida",
-                submit_button: "Enviar Preinscripció",
-                status_success: "Preinscripció enviada correctament! Gràcies.",
-                status_error_supabase_credentials: "Error de configuració. Contacta amb l'administrador.",
-                status_error_activity_required: "Has de seleccionar almenys una activitat extraescolar.",
-                status_error_generic: "Error en enviar el formulari: {error}. Si us plau, intenta-ho de nou més tard.",
-                image_auth_modal_title: "Informació sobre Drets d'Imatge",
-                image_auth_modal_content: `<p>En compliment de la Llei Orgànica 1/1982, del 5 de maig, sobre el dret a l’honor, a la intimitat personal i familiar i a la pròpia imatge demanem autorització als pares o tutors legals dels menors d’edat per a l’ús de la imatge obtinguda amb fotografies i/o vídeos realitzats per la nostra entitat amb la finalitat d’exposar-les a la nostra web, al facebook i instagram.</p><p>Sol·licitem el consentiment i autorització a l’AFA Escola Falguera, a fer ús de la imatges obtingudes durant la seva participació en les activitats extraescolars, publicades a la pagina web o xarxes socials.</p><p>A partir de la signatura d’aquest formulari vostè autoritza expressament el tractament de les seves dades de caràcter personal, per a la finalitat especificada, per part de l'AFA Escola Falguera.</p>`,
-                conditions_modal_title: "Condicions de les Extraescolars i Acollida",
-                conditions_modal_content: `<div class="space-y-3">
-                    <h4 class="font-bold text-base">Preus i Pagament</h4>
-                    <ul class="list-disc list-inside text-sm">
-                        <li>Activitats Generals (16:30h a 18:00h): <strong>20€/mes socis</strong>, <strong>25€/mes no socis</strong>.</li>
-                        <li>Timbals: <strong>14€/mes socis</strong>, <strong>18€/mes no socis</strong>.</li>
-                        <li>Descompte 2 activitats/setmana (mateixa activitat): <strong>36€/mes socis</strong>, <strong>40€/mes no socis</strong>.</li>
-                        <li>El pagament és mensual, per transferència bancària al compte <strong>ES22.0081.1604.7400.0103.8208</strong> abans del dia 10 del mes.</li>
-                        <li class="font-semibold text-red-600">Important: Indicar al concepte el nom de l'alumne/a i l'activitat.</li>
-                    </ul>
-                    <h4 class="font-bold text-base pt-2">Condicions Generals</h4>
-                    <ol class="list-decimal list-inside space-y-2 text-sm">
-                    <li>Per poder accedir a les extraescolars o acollida amb el preu de soci, heu d'estar al corrent del pagament de la quota de l'AFA.</li>
-                    <li>La inscripció de l'alumne en l'activitat es formalitzarà lliurant el formulari d'inscripció directament a l'AFA, o bé per correu electrònic a ampafalguera@hotmail.es, degudament emplenat i signat, conjuntament amb la declaració responsable.</li>
-                    <li>A partir de setembre les sol·licituts d'alta i de baixa de les activitats proposades hauran de lliurar-se a l'AFA abans del dia 20 del mes en curs (una vegada depassat aquest termini, la baixa NO serà efectiva fins al mes següent i s'haurà d'abonar la quota corresponent). Es poden enviar via e-mail o presencialment a la oficina de l'AFA.</li>
-                    <li>Totes les activitats son de pagament mensual, amb transferència bancària al compte del Banc Sabadell ES22.0081.1604.7400.0103.8208 abans del dia 10 del mes en curs. Important! Indicar al concepte nom de l'alumne i activitat.</li>
-                    <li>Si no hi hagués un nombre mínim d'alumnes, l'activitat no es podrà realitzar i s'oferiran alternatives en la mesura que sigui possible.</li>
-                    <li>Si les sol·licituts superen el nombre de places ofertes, es tindrà en compte l'ordre d'inscripció.</li>
-                    <li>No es descomptarà del preu ni es recuperarà la no assistència dels alumnes, ni els dies de vacances i festius segons el calendari escolar. No obstant això, si són recuperables els dies de classe no impartits per causes atribuïbles a l'empresa d'extraescolars.</li>
-                    <li>Els impagaments que es produeixin causaran la baixa de l'alumne en totes les activitats extraescolars.</li>
-                    <li>És obligació dels pares/tutors advertir al formulari d'inscripció de qualsevol malaltia, al·lèrgia o intolerància que l'alumne pogués patir.</li>
-                    <li>Les persones autoritzades per recollir a l'alumne de las extraescolars o acollida, seran el pares/mares/tutors/es i persones autoritzades que figuren al formulari d'inscripció.</li>
-                    <li>S'ha de respectar tan a la persona responsable de l'activitat, com als companys i companyes, materials i infraestructures. De no ser així, l'AFA podrà decidir juntament amb l'empresa d'extraescolars, si algú ha d'abandonar el grup, a fi de preservar la bona marxa i el bon funcionament de l'activitat.</li>
-                    <li>Els usuaris de beques confirmades, hauran d'informar a l'AFA marcant la casella al formulari d'incripció, i lliurant el document corresponent.</li>
-                    <li>Les preinscripcions es faran del 10 al 14 de juny i del 10 al 20 de setembre.</li>
-                </ol></div>`
-            },
-            es: {
-                page_title: "Formulario Preinscripción Extraescolares 2025-26 | AFA Escola Falguera",
-                main_header: "AFA Escola Falguera",
-                main_subheader: "Formulario de Preinscripción para Actividades Extraescolares 2025-26",
-                important_info_title: "Información importante:",
-                important_info_body: "Las actividades ofrecidas solo se llevarán a cabo si hay un número suficiente de alumnos. En caso de que el número de inscritos supere el aforo máximo, se tendrá en cuenta el orden de inscripción.",
-                pricing_legend: "Precios y Método de Pago",
-                pricing_general_title: "Actividades Generales",
-                pricing_general_hours: "16:30h a 18:00h",
-                pricing_socis: "/mes socios",
-                pricing_no_socis: "/mes no socios",
-                pricing_timbals_title: "Timbales",
-                pricing_timbals_hours: "17:30h a 19:00h (Viernes)",
-                pricing_discount_title: "Descuento:",
-                pricing_discount_body: "Si se realizan dos extraescolares iguales en la misma semana, el precio final sería 36€ mensuales para socios, y 40€ mensuales para NO socios.",
-                schedule_info_title: "Horarios de Actividades:",
-                schedule_general: "• Actividades generales: 16:30h a 18:00h",
-                schedule_english: "• Clases de Inglés: 16:30h a 17:45h",
-                schedule_timbals: "• Timbales: 17:30h a 19:00h",
-                english_payment_notice_title: "⚠️ AVISO IMPORTANTE - Clases de Inglés:",
-                english_payment_notice_body: "Las clases de Inglés de los martes y miércoles NO se pagan a través del AFA. El pago se gestiona directamente con la empresa de inglés.",
-                english_payment_warning: "⚠️ No se paga por AFA",
-                payment_info_title: "Información de Pago",
-                payment_info_body: "Todas las actividades son de pago mensual por transferencia bancaria antes del día 10 del mes en curso.",
-                payment_copy_iban: "Copiar IBAN",
-                payment_copied_iban: "¡Copiado!",
-                payment_info_concept: "¡Importante! Indicar en el concepto el nombre del alumno/a y la actividad.",
-                students_data_legend: "Datos de los Alumnos",
-                student_1_title: "Alumno/a 1",
-                student_2_title: "Alumno/a 2",
-                student_3_title: "Alumno/a 3",
-                add_second_student: "+ Añadir segundo alumno/a",
-                add_third_student: "+ Añadir tercer alumno/a",
-                remove_student: "✕ Eliminar",
-                student_name: "Nombre", student_surname: "Apellidos", student_course: "Curso",
-                select_course: "Selecciona un curso",
-                course_1pri: "1º Primaria", course_2pri: "2º Primaria", course_3pri: "3º Primaria", course_4pri: "4º Primaria", course_5pri: "5º Primaria", course_6pri: "6º Primaria",
-                activities_legend: "Actividades Extraescolares",
-                activities_subtitle: "Selecciona las actividades deseadas para cada alumno/a (mínimo una). Las opciones aparecerán al elegir un curso.",
-                student1_activities_title: "Actividades para el Alumno/a 1",
-                student2_activities_title: "Actividades para el Alumno/a 2",
-                student3_activities_title: "Actividades para el Alumno/a 3",
-                infantil_options: "Opciones para Infantil (I3-I5)",
-                primaria1_options: "Opciones para 1º, 2º y 3º de Primaria",
-                primaria2_options: "Opciones para 4º, 5º y 6º de Primaria",
-                activity_teatre_musical_dm: "Teatro Musical en Inglés", activity_marxa_angles_dj: "Marcha-Marcha en Inglés", activity_timbals_iniciacio_dv: "Iniciación a Timbales",
-                activity_futbol_dm: "Fútbol", activity_patinatge_dc: "Patinaje", activity_yoga_dc: "Yoga", activity_futbol_dj: "Fútbol", activity_timbals_dv: "Timbales", activity_angles_dt: "Inglés", activity_angles_dc: "Inglés",
-                day_dl: "Lunes", day_dt: "Martes", day_dm: "Martes", day_dc: "Miércoles", day_dj: "Jueves", day_dv: "Viernes",
-                parent_data_legend: "Datos del Padre/Madre/Tutor/a",
-                parent_name: "Nombre y Apellidos", parent_dni: "DNI/NIF", parent_phone_1: "Teléfono de Contacto 1", parent_phone_2: "Teléfono de Contacto 2", parent_email_1: "Email de Contacto 1", parent_email_2: "Email de Contacto 2",
-                optional: "(Opcional)",
-                afa_member_question: "¿Sois socios del AFA?",
-                yes: "Sí", no: "No",
-                auth_legend: "Información Adicional y Autorizaciones",
-                health_question: "¿El/la alumno/a tiene alguna enfermedad crónica, alergia o toma medicación?",
-                health_placeholder: "Si no hay nada que indicar, déjalo en blanco.",
-                image_auth_title: "Autorización de derechos de imagen",
-                image_auth_subtitle: "Para el uso de imágenes en fotografías y/o vídeos realizados por el AFA con el fin de exponerlas en nuestra web y redes sociales.",
-                image_auth_yes: "Sí, autorizo el tratamiento de la imagen.", image_auth_no: "No, no autorizo el tratamiento de la imagen.",
-                exit_auth_title: "Autorización de salida de la actividad",
-                exit_auth_question: "¿El/la alumno/a puede irse solo/a al finalizar la actividad extraescolar?",
-                authorized_pickup_label: "Personas autorizadas a recoger al niño/a (Nombre, Apellidos y DNI)",
-                authorized_pickup_placeholder: "Si puede irse solo/a, o solo lo recogen los tutores legales, deja este campo en blanco.",
-                conditions_accepted_label: "He leído y acepto las",
-                conditions_link: "condiciones de las extraescolares y acogida",
-                submit_button: "Enviar Preinscripción",
-                status_success: "¡Preinscripción enviada correctamente! Gracias.",
-                status_error_supabase_credentials: "Error de configuración. Contacta con el administrador.",
-                status_error_activity_required: "Debes seleccionar al menos una actividad extraescolar.",
-                status_error_generic: "Error al enviar el formulario: {error}. Por favor, inténtalo de nuevo más tarde.",
-                image_auth_modal_title: "Información sobre Derechos de Imagen",
-                image_auth_modal_content: `<p>En cumplimiento de la Ley Orgánica 1/1982, de 5 de mayo, sobre el derecho al honor, a la intimidad personal y familiar y a la propia imagen, pedimos autorización a los padres o tutores legales de los menores de edad para el uso de la imagen obtenida con fotografías y/o vídeos realizados por nuestra entidad con la finalidad de exponerlas en nuestra web, en facebook e instagram.</p><p>Solicitamos el consentimiento y autorización a la AFA Escola Falguera, a hacer uso de las imágenes obtenidas durante su participación en las actividades extraescolares, publicadas en la página web o redes sociales.</p><p>A partir de la firma de este formulario usted autoriza expresamente el tratamiento de sus datos de carácter personal, para la finalidad especificada, por parte de la AFA Escola Falguera.</p>`,
-                conditions_modal_title: "Condiciones de las Extraescolares y Acogida",
-                conditions_modal_content: `<div class="space-y-3">
-                    <h4 class="font-bold text-base">Precios y Pago</h4>
-                    <ul class="list-disc list-inside text-sm">
-                        <li>Actividades Generales (16:30h a 18:00h): <strong>20€/mes socios</strong>, <strong>25€/mes no socios</strong>.</li>
-                        <li>Timbales: <strong>14€/mes socios</strong>, <strong>18€/mes no socios</strong>.</li>
-                        <li>Descuento 2 actividades/semana (misma actividad): <strong>36€/mes socios</strong>, <strong>40€/mes no socios</strong>.</li>
-                        <li>El pago es mensual, por transferencia bancaria a la cuenta <strong>ES22.0081.1604.7400.0103.8208</strong> antes del día 10 del mes.</li>
-                        <li class="font-semibold text-red-600">¡Importante! Indicar en el concepto el nombre del alumno/a y la actividad.</li>
-                    </ul>
-                    <h4 class="font-bold text-base pt-2">Condiciones Generales</h4>
-                    <ol class="list-decimal list-inside space-y-2 text-sm">
-                    <li>Para poder acceder a las extraescolares o acogida con el precio de socio, debéis estar al corriente del pago de la cuota de la AFA.</li>
-                    <li>La inscripción del alumno en la actividad se formalizará entregando el formulario de inscripción directamente a la AFA, o bien por correo electrónico a ampafalguera@hotmail.es, debidamente cumplimentado y firmado, conjuntamente con la declaración responsable.</li>
-                    <li>A partir de septiembre las solicitudes de alta y de baja de las actividades propuestas deberán entregarse a la AFA antes del día 20 del mes en curso (una vez superado este plazo, la baja NO será efectiva hasta el mes siguiente y se deberá abonar la cuota correspondiente). Se pueden enviar vía e-mail o presencialmente en la oficina de la AFA.</li>
-                    <li>Todas las actividades son de pago mensual, con transferencia bancaria a la cuenta del Banc Sabadell ES22.0081.1604.7400.0103.8208 antes del día 10 del mes en curso. ¡Importante! Indicar en el concepto nombre del alumno y la actividad.</li>
-                    <li>Si no hubiera un número mínimo de alumnos, la actividad no se podrá realizar y se ofrecerán alternativas en la medida que sea posible.</li>
-                    <li>Si las solicitudes superan el número de plazas ofertadas, se tendrá en cuenta el orden de inscripción.</li>
-                    <li>No se descontará del precio ni se recuperará la no asistencia de los alumnos, ni los días de vacaciones y festivos según el calendario escolar. Sin embargo, sí son recuperables los días de clase no impartidos por causas atribuibles a la empresa de extraescolares.</li>
-                    <li>Los impagos que se produzcan causarán la baja del alumno en todas las actividades extraescolares.</li>
-                    <li>Es obligación de los padres/tutores advertir en el formulario de inscripción de cualquier enfermedad, alergia o intolerancia que el alumno pudiera sufrir.</li>
-                    <li>Las personas autorizadas para recoger al alumno de las extraescolares o acogida, serán los padres/madres/tutores/as y personas autorizadas que figuren en el formulario de inscripción.</li>
-                    <li>Se ha de respetar tanto a la persona responsable de la actividad, como a los compañeros y compañeras, materiales e infraestructuras. De no ser así, la AFA podrá decidir juntamente con la empresa de extraescolares, si alguien debe abandonar el grupo, a fin de preservar la buena marcha y el buen funcionamiento de la actividad.</li>
-                    <li>Los usuarios de becas confirmadas, deberán informar a la AFA marcando la casilla en el formulario de inscripción, y entregando el documento correspondiente.</li>
-                    <li>Las preinscripciones se harán del 10 al 14 de junio y del 10 al 20 de septiembre.</li>
-                </ol></div>`
-            }
-        };
-
-        const modal = document.getElementById('info-modal');
-        const modalOverlay = document.querySelector('.modal-overlay');
-        const modalContainer = document.querySelector('.modal-container');
-        const modalTitle = document.getElementById('modal-title');
-        const modalContent = document.getElementById('modal-content');
-        const modalCloseBtn = document.getElementById('modal-close-btn');
-
-        const openModal = (titleKey, contentKey) => {
-            modalTitle.innerText = translations[currentLang][titleKey];
-            modalContent.innerHTML = translations[currentLang][contentKey];
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modalOverlay.classList.remove('opacity-0');
-                modalContainer.classList.remove('scale-95');
-            }, 10);
-        };
-
-        const closeModal = () => {
-            modalOverlay.classList.add('opacity-0');
-            modalContainer.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-        };
-
-        document.getElementById('image-info-btn').addEventListener('click', () => openModal('image_auth_modal_title', 'image_auth_modal_content'));
-        document.getElementById('conditions-btn').addEventListener('click', () => openModal('conditions_modal_title', 'conditions_modal_content'));
-        modalCloseBtn.addEventListener('click', closeModal);
-        modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
-        
-        const setLanguage = (lang) => {
-            currentLang = lang;
-            document.documentElement.lang = lang;
-            document.querySelectorAll('[data-lang]').forEach(element => {
-                const key = element.dataset.lang;
-                if (translations[lang][key]) element.innerText = translations[lang][key];
-            });
-            document.querySelectorAll('[data-lang-placeholder]').forEach(element => {
-                const key = element.dataset.langPlaceholder;
-                if (translations[lang][key]) element.placeholder = translations[lang][key];
-            });
-            const caBtn = document.getElementById('lang-ca');
-            const esBtn = document.getElementById('lang-es');
-            
-            if (lang === 'ca') {
-                caBtn.classList.add('active');
-                caBtn.classList.remove('text-gray-600');
-                esBtn.classList.remove('active');
-                esBtn.classList.add('text-gray-600');
-            } else {
-                esBtn.classList.add('active');
-                esBtn.classList.remove('text-gray-600');
-                caBtn.classList.remove('active');
-                caBtn.classList.add('text-gray-600');
-            }
-            renderActivityCards();
-        };
-
-        const createActivityCard = (activity, studentNumber) => {
-            // Solo las clases de inglés de martes y miércoles NO se pagan por AFA
-            const isEnglishClassNotPaidByAFA = activity.value.includes('Anglès') && 
-                (activity.value.includes('Dimarts') || activity.value.includes('Dimecres')) &&
-                !activity.value.includes('Teatre Musical') && !activity.value.includes('Marxa-Marxa');
-            
-            return `
-                <label class="activity-card flex flex-col justify-between p-3 rounded-lg hover:shadow-md cursor-pointer">
-                    <input type="checkbox" name="activity_${studentNumber}" value="${activity.value}">
-                    <span class="font-semibold text-gray-800 text-sm md:text-base" data-lang="${activity.langKey}"></span>
-                    <span class="text-xs text-gray-500 mt-1">${activity.schedule}</span>
-                    <span class="text-xs text-white bg-blue-500 rounded-full px-2 py-0.5 mt-2 self-start" data-lang="${activity.dayLangKey}"></span>
-                    ${isEnglishClassNotPaidByAFA ? '<span class="text-xs text-red-600 font-semibold mt-1" data-lang="english_payment_warning">⚠️ No es paga per AFA</span>' : ''}
-                </label>
-            `;
+        // Initialize Supabase client
+        try {
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (error) {
+            console.error("Error initializing Supabase client:", error);
+            showError("Error de configuración. Contacta con el administrador.");
         }
 
-        const renderActivityCards = () => {
-            // Student 1 activities
-            const infantil1Container = document.querySelector('#activities-infantil-1 .grid');
-            const primaria1_1Container = document.querySelector('#activities-primaria1-1 .grid');
-            const primaria2_1Container = document.querySelector('#activities-primaria2-1 .grid');
-
-            infantil1Container.innerHTML = allActivities.infantil.map(activity => createActivityCard(activity, '1')).join('');
-            primaria1_1Container.innerHTML = allActivities.primaria1.map(activity => createActivityCard(activity, '1')).join('');
-            primaria2_1Container.innerHTML = allActivities.primaria2.map(activity => createActivityCard(activity, '1')).join('');
-
-            // Student 2 activities
-            const infantil2Container = document.querySelector('#activities-infantil-2 .grid');
-            const primaria1_2Container = document.querySelector('#activities-primaria1-2 .grid');
-            const primaria2_2Container = document.querySelector('#activities-primaria2-2 .grid');
-
-            infantil2Container.innerHTML = allActivities.infantil.map(activity => createActivityCard(activity, '2')).join('');
-            primaria1_2Container.innerHTML = allActivities.primaria1.map(activity => createActivityCard(activity, '2')).join('');
-            primaria2_2Container.innerHTML = allActivities.primaria2.map(activity => createActivityCard(activity, '2')).join('');
-
-            // Student 3 activities
-            const infantil3Container = document.querySelector('#activities-infantil-3 .grid');
-            const primaria1_3Container = document.querySelector('#activities-primaria1-3 .grid');
-            const primaria2_3Container = document.querySelector('#activities-primaria2-3 .grid');
-
-            infantil3Container.innerHTML = allActivities.infantil.map(activity => createActivityCard(activity, '3')).join('');
-            primaria1_3Container.innerHTML = allActivities.primaria1.map(activity => createActivityCard(activity, '3')).join('');
-            primaria2_3Container.innerHTML = allActivities.primaria2.map(activity => createActivityCard(activity, '3')).join('');
-
-            document.querySelectorAll('[data-lang]').forEach(element => {
-                const key = element.dataset.lang;
-                if (translations[currentLang][key]) element.innerText = translations[currentLang][key];
-            });
-
-            document.querySelectorAll('.activity-card').forEach(card => {
-                card.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const checkbox = card.querySelector('input[type="checkbox"]');
-                    checkbox.checked = !checkbox.checked;
-                    card.classList.toggle('selected', checkbox.checked);
-                });
-            });
-        }
-
-        document.getElementById('copy-iban-btn').addEventListener('click', (e) => {
-            const iban = document.getElementById('iban-account').innerText;
-            navigator.clipboard.writeText(iban).then(() => {
-                e.target.innerText = translations[currentLang].payment_copied_iban;
-                setTimeout(() => {
-                    e.target.innerText = translations[currentLang].payment_copy_iban;
-                }, 2000);
-            });
-        });
-
-        document.getElementById('lang-ca').addEventListener('click', () => setLanguage('ca'));
-        document.getElementById('lang-es').addEventListener('click', () => setLanguage('es'));
-        
+        // Load data on page load
         document.addEventListener('DOMContentLoaded', () => {
-            renderActivityCards();
-            setLanguage('ca');
-            
-            // Hide all activity sections by default
-            document.querySelectorAll('.form-section').forEach(section => {
-                section.classList.remove('active');
-            });
-        });
-
-        const student1Course = document.getElementById('student1-course');
-        const student2Course = document.getElementById('student2-course');
-        const student3Course = document.getElementById('student3-course');
-        const form = document.getElementById('inscription-form');
-        const statusMessage = document.getElementById('status-message');
-        const submitButton = document.getElementById('submit-button');
-        const submitText = document.getElementById('submit-text');
-        const submitLoader = document.getElementById('submit-loader');
-
-        const updateActivitiesForStudent = (studentNumber) => {
-            const course = document.getElementById(`student${studentNumber}-course`).value;
-            const infantil = document.getElementById(`activities-infantil-${studentNumber}`);
-            const primaria1 = document.getElementById(`activities-primaria1-${studentNumber}`);
-            const primaria2 = document.getElementById(`activities-primaria2-${studentNumber}`);
-            
-            // Hide all activity sections for this student
-            [infantil, primaria1, primaria2].forEach(el => el.classList.remove('active'));
-            
-            // Clear selected activities for this student
-            document.querySelectorAll(`input[name="activity_${studentNumber}"]`).forEach(input => {
-                input.checked = false;
-                input.closest('.activity-card').classList.remove('selected');
-            });
-
-            // Show only the appropriate activity section for this student's course
-            if (['I3', 'I4', 'I5'].includes(course)) {
-                infantil.classList.add('active');
-            } else if (['1PRI', '2PRI', '3PRI'].includes(course)) {
-                primaria1.classList.add('active');
-            } else if (['4PRI', '5PRI', '6PRI'].includes(course)) {
-                primaria2.classList.add('active');
-            }
-        };
-
-        student1Course.addEventListener('change', () => updateActivitiesForStudent('1'));
-        student2Course.addEventListener('change', () => updateActivitiesForStudent('2'));
-        student3Course.addEventListener('change', () => updateActivitiesForStudent('3'));
-
-        // Add/Remove second student functionality
-        document.getElementById('add-second-student').addEventListener('click', () => {
-            document.getElementById('student-2-section').classList.remove('hidden');
-            document.getElementById('student2-activities').classList.remove('hidden');
-            document.getElementById('add-second-student').classList.add('hidden');
-            document.getElementById('add-third-student').classList.remove('hidden');
-        });
-
-        document.getElementById('remove-second-student').addEventListener('click', () => {
-            document.getElementById('student-2-section').classList.add('hidden');
-            document.getElementById('student2-activities').classList.add('hidden');
-            document.getElementById('add-second-student').classList.remove('hidden');
-            document.getElementById('add-third-student').classList.add('hidden');
-            
-            // Clear second student data
-            document.getElementById('student2-name').value = '';
-            document.getElementById('student2-surname').value = '';
-            document.getElementById('student2-course').value = '';
-            document.querySelectorAll('input[name="activity_2"]').forEach(input => {
-                input.checked = false;
-                input.closest('.activity-card').classList.remove('selected');
-            });
-            
-            // Hide all activity sections for student 2
-            document.querySelectorAll('#student2-activities .form-section').forEach(section => {
-                section.classList.remove('active');
-            });
-        });
-
-        // Add/Remove third student functionality
-        document.getElementById('add-third-student').addEventListener('click', () => {
-            document.getElementById('student-3-section').classList.remove('hidden');
-            document.getElementById('student3-activities').classList.remove('hidden');
-            document.getElementById('add-third-student').classList.add('hidden');
-        });
-
-        document.getElementById('remove-third-student').addEventListener('click', () => {
-            document.getElementById('student-3-section').classList.add('hidden');
-            document.getElementById('student3-activities').classList.add('hidden');
-            document.getElementById('add-third-student').classList.remove('hidden');
-            
-            // Clear third student data
-            document.getElementById('student3-name').value = '';
-            document.getElementById('student3-surname').value = '';
-            document.getElementById('student3-course').value = '';
-            document.querySelectorAll('input[name="activity_3"]').forEach(input => {
-                input.checked = false;
-                input.closest('.activity-card').classList.remove('selected');
-            });
-            
-            // Hide all activity sections for student 3
-            document.querySelectorAll('#student3-activities .form-section').forEach(section => {
-                section.classList.remove('active');
-            });
-        });
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (SUPABASE_URL === "LA_TEVA_URL_DE_SUPABASE" || SUPABASE_KEY === "LA_TEVA_ANON_KEY_DE_SUPABASE") {
-                showStatus(translations[currentLang].status_error_supabase_credentials, 'error');
-                return;
-            }
-
-            try {
-                 supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-            } catch (error) {
-                console.error("Error initializing Supabase client:", error);
-                showStatus(translations[currentLang].status_error_generic.replace('{error}', error.message), 'error');
+            // Verificación adicional de seguridad
+            if (!checkAuthentication()) {
                 return;
             }
             
-            // Check if at least one student has activities selected
-            const selectedActivities1 = Array.from(document.querySelectorAll('input[name="activity_1"]:checked'));
-            const selectedActivities2 = Array.from(document.querySelectorAll('input[name="activity_2"]:checked'));
-            
-            if (selectedActivities1.length === 0 && selectedActivities2.length === 0) {
-                showStatus(translations[currentLang].status_error_activity_required, 'error');
-                document.querySelector('[data-lang="activities_legend"]').scrollIntoView({ behavior: 'smooth' });
+            loadInscriptions();
+            setupEventListeners();
+        });
+
+        async function loadInscriptions() {
+            // Verificar autenticación antes de cargar datos
+            if (!checkAuthentication()) {
                 return;
             }
             
             setLoading(true);
-            const formData = new FormData(form);
-            const selectedActivities1Values = selectedActivities1.map(activity => activity.value);
-            const selectedActivities2Values = selectedActivities2.map(activity => activity.value);
-            
-            // Prepare students data
-            const students = [];
-            
-            // Student 1 (always present)
-            if (formData.get('student1_name') && formData.get('student1_surname') && formData.get('student1_course')) {
-                students.push({
-                    name: formData.get('student1_name'),
-                    surname: formData.get('student1_surname'),
-                    course: formData.get('student1_course'),
-                    activities: selectedActivities1Values
-                });
-            }
-            
-            // Student 2 (if added)
-            if (formData.get('student2_name') && formData.get('student2_surname') && formData.get('student2_course')) {
-                students.push({
-                    name: formData.get('student2_name'),
-                    surname: formData.get('student2_surname'),
-                    course: formData.get('student2_course'),
-                    activities: selectedActivities2Values
-                });
-            }
-            
-            // Student 3 (if added)
-            if (formData.get('student3_name') && formData.get('student3_surname') && formData.get('student3_course')) {
-                const selectedActivities3 = document.querySelectorAll('input[name="activity_3"]:checked');
-                const selectedActivities3Values = Array.from(selectedActivities3).map(input => input.value);
-                
-                students.push({
-                    name: formData.get('student3_name'),
-                    surname: formData.get('student3_surname'),
-                    course: formData.get('student3_course'),
-                    activities: selectedActivities3Values
-                });
-            }
-            
-            const submissionData = {
-                students: students,
-                parent_name: formData.get('parent_name'), parent_dni: formData.get('parent_dni'), parent_phone_1: formData.get('parent_phone_1'),
-                parent_phone_2: formData.get('parent_phone_2') || 'No informat', parent_email_1: formData.get('parent_email_1'), parent_email_2: formData.get('parent_email_2') || 'No informat',
-                afa_member: formData.get('afa_member') === 'true', health_info: formData.get('health_info') || 'Cap',
-                image_auth_consent: formData.get('image_auth_consent'), can_leave_alone: formData.get('can_leave_alone') === 'true',
-                authorized_pickup: formData.get('authorized_pickup') || 'Cap persona addicional autoritzada.',
-                conditions_accepted: formData.get('conditions_accepted') === 'on',
-                form_language: currentLang,
-            };
             try {
-                const { data, error } = await supabaseClient.from('inscripcions').insert([submissionData]);
+                const { data, error } = await supabaseClient
+                    .from('inscripcions')
+                    .select('*')
+                    .order('id', { ascending: false });
+
                 if (error) throw error;
-                showStatus(translations[currentLang].status_success, 'success');
-                form.reset();
-                
-                // Reset activities sections - hide all
-                document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
-                document.querySelectorAll('.activity-card.selected').forEach(c => c.classList.remove('selected'));
-                
-                // Hide second student if visible
-                document.getElementById('student-2-section').classList.add('hidden');
-                document.getElementById('student2-activities').classList.add('hidden');
-                document.getElementById('add-second-student').classList.remove('hidden');
-                
-                // Clear course selections to hide activity sections
-                document.getElementById('student1-course').value = '';
-                document.getElementById('student2-course').value = '';
-                document.getElementById('student3-course').value = '';
-                
-                // Hide third student if visible
-                document.getElementById('student-3-section').classList.add('hidden');
-                document.getElementById('student3-activities').classList.add('hidden');
-                document.getElementById('add-third-student').classList.add('hidden');
+
+                allInscriptions = data || [];
+                filteredInscriptions = [...allInscriptions];
+                updateStats();
+                populateActivityFilter();
+                renderTable();
             } catch (error) {
-                console.error('Error submitting to Supabase:', error);
-                showStatus(translations[currentLang].status_error_generic.replace('{error}', error.message), 'error');
+                console.error('Error loading inscriptions:', error);
+                showError('Error al cargar las inscripciones: ' + error.message);
             } finally {
                 setLoading(false);
             }
-        });
-        
-        function setLoading(isLoading) {
-            submitButton.disabled = isLoading;
-            submitText.classList.toggle('hidden', isLoading);
-            submitLoader.classList.toggle('hidden', !isLoading);
         }
 
-        function showStatus(message, type) {
-            statusMessage.textContent = message;
-            statusMessage.className = `mt-6 text-center p-3 rounded-lg ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+        function updateStats() {
+            document.getElementById('total-inscriptions').textContent = allInscriptions.length;
+            
+            const afaMembers = allInscriptions.filter(ins => ins.afa_member).length;
+            document.getElementById('afa-members').textContent = afaMembers;
+            document.getElementById('non-members').textContent = allInscriptions.length - afaMembers;
+
+            // Most popular activity
+            const activityCounts = {};
+            allInscriptions.forEach(ins => {
+                if (ins.students && Array.isArray(ins.students)) {
+                    // New format with multiple students
+                    ins.students.forEach(student => {
+                        if (student.activities && Array.isArray(student.activities)) {
+                            student.activities.forEach(activity => {
+                                activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+                            });
+                        }
+                    });
+                } else if (ins.activities && Array.isArray(ins.activities)) {
+                    // Old format with single student
+                    ins.activities.forEach(activity => {
+                        activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+                    });
+                }
+            });
+            
+            const mostPopular = Object.entries(activityCounts)
+                .sort(([,a], [,b]) => b - a)[0];
+            
+            document.getElementById('popular-activity').textContent = mostPopular ? mostPopular[0] : 'N/A';
+        }
+
+        function populateActivityFilter() {
+            const activityFilter = document.getElementById('activity-filter');
+            const activities = new Set();
+            
+            allInscriptions.forEach(ins => {
+                if (ins.students && Array.isArray(ins.students)) {
+                    // New format with multiple students
+                    ins.students.forEach(student => {
+                        if (student.activities && Array.isArray(student.activities)) {
+                            student.activities.forEach(activity => activities.add(activity));
+                        }
+                    });
+                } else if (ins.activities && Array.isArray(ins.activities)) {
+                    // Old format with single student
+                    ins.activities.forEach(activity => activities.add(activity));
+                }
+            });
+
+            activityFilter.innerHTML = '<option value="">Todas las actividades</option>';
+            Array.from(activities).sort().forEach(activity => {
+                const option = document.createElement('option');
+                option.value = activity;
+                option.textContent = activity;
+                activityFilter.appendChild(option);
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('inscriptions-table-body');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredInscriptions.slice(startIndex, endIndex);
+
+            // Crear array de filas individuales para cada estudiante
+            const tableRows = [];
+            
+            pageData.forEach(inscription => {
+                if (inscription.students && Array.isArray(inscription.students)) {
+                    // New format with multiple students - crear una fila por estudiante
+                    inscription.students.forEach((student, studentIndex) => {
+                        // Verificar si el estudiante está suspendido
+                        const isSuspended = student.suspended === true;
+                        const statusFilter = document.getElementById('status-filter').value;
+                        
+                        // Aplicar filtro de estado
+                        if (statusFilter === 'active' && isSuspended) return;
+                        if (statusFilter === 'suspended' && !isSuspended) return;
+                        
+                        const activitiesInfo = student.activities ? 
+                            (student.activities.slice(0, 2).join(', ') + 
+                            (student.activities.length > 2 ? ` +${student.activities.length - 2} más` : '')) : 
+                            'N/A';
+                        
+                        const rowClass = isSuspended ? 'bg-yellow-50 opacity-75' : 'hover:bg-gray-50';
+                        const statusBadge = isSuspended ? 
+                            '<span class="status-badge bg-yellow-100 text-yellow-800">Suspendido</span>' :
+                            `<span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
+                                ${inscription.afa_member ? 'Sí' : 'No'}
+                            </span>`;
+                        
+                        tableRows.push(`
+                        <tr class="${rowClass}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${student.name} ${student.surname}</div>
+                                ${isSuspended ? '<div class="text-xs text-yellow-600">Suspendido</div>' : ''}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-900">${student.course}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">${activitiesInfo}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">${inscription.parent_phone_1 || 'N/A'}</div>
+                                <div class="text-sm text-gray-500">${inscription.parent_email_1 || 'N/A'}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                ${statusBadge}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                ${inscription.created_at ? new Date(inscription.created_at).toLocaleDateString('es-ES') : 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                    Ver detalles
+                                </button>
+                                <button onclick="editInscription('${inscription.id}')" class="text-green-600 hover:text-green-900 mr-3">
+                                    Editar
+                                </button>
+                                <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                        `);
+                    });
+                } else {
+                    // Old format with single student
+                    const isSuspended = inscription.student_suspended === true;
+                    const statusFilter = document.getElementById('status-filter').value;
+                    
+                    // Aplicar filtro de estado
+                    if (statusFilter === 'active' && isSuspended) return;
+                    if (statusFilter === 'suspended' && !isSuspended) return;
+                    
+                    const activitiesInfo = inscription.activities ? 
+                        (inscription.activities.slice(0, 2).join(', ') + 
+                        (inscription.activities.length > 2 ? ` +${inscription.activities.length - 2} más` : '')) : 
+                        'N/A';
+                    
+                    const rowClass = isSuspended ? 'bg-yellow-50 opacity-75' : 'hover:bg-gray-50';
+                    const statusBadge = isSuspended ? 
+                        '<span class="status-badge bg-yellow-100 text-yellow-800">Suspendido</span>' :
+                        `<span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
+                            ${inscription.afa_member ? 'Sí' : 'No'}
+                        </span>`;
+                    
+                    tableRows.push(`
+                    <tr class="${rowClass}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${inscription.student_name || ''} ${inscription.student_surname || ''}</div>
+                            ${isSuspended ? '<div class="text-xs text-yellow-600">Suspendido</div>' : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm text-gray-900">${inscription.student_course || 'N/A'}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">${activitiesInfo}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${inscription.parent_phone_1 || 'N/A'}</div>
+                            <div class="text-sm text-gray-500">${inscription.parent_email_1 || 'N/A'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            ${statusBadge}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${inscription.created_at ? new Date(inscription.created_at).toLocaleDateString('es-ES') : 'N/A'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                Ver detalles
+                            </button>
+                            <button onclick="editInscription('${inscription.id}')" class="text-green-600 hover:text-green-900 mr-3">
+                                Editar
+                            </button>
+                            <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                    `);
+                }
+            });
+
+            tbody.innerHTML = tableRows.join('');
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredInscriptions.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '<div class="flex items-center space-x-2">';
+            
+            // Previous button
+            paginationHTML += `
+                <button onclick="changePage(${currentPage - 1})" 
+                        ${currentPage === 1 ? 'disabled' : ''} 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Anterior
+                </button>
+            `;
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    paginationHTML += `
+                        <button onclick="changePage(${i})" 
+                                class="px-3 py-2 text-sm font-medium ${i === currentPage ? 'text-blue-600 bg-blue-50 border-blue-500' : 'text-gray-500 bg-white border-gray-300'} border rounded-md hover:bg-gray-50">
+                            ${i}
+                        </button>
+                    `;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    paginationHTML += '<span class="px-3 py-2 text-sm text-gray-500">...</span>';
+                }
+            }
+
+            // Next button
+            paginationHTML += `
+                <button onclick="changePage(${currentPage + 1})" 
+                        ${currentPage === totalPages ? 'disabled' : ''} 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Siguiente
+                </button>
+            `;
+
+            paginationHTML += '</div>';
+            pagination.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredInscriptions.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderTable();
+            }
+        }
+
+        function viewDetails(id) {
+            const inscription = allInscriptions.find(ins => ins.id === id);
+            if (!inscription) return;
+
+            const modal = document.getElementById('detail-modal');
+            const content = document.getElementById('modal-content');
+            
+            let studentsHtml = '';
+            let activitiesHtml = '';
+            
+            if (inscription.students && Array.isArray(inscription.students)) {
+                // New format with multiple students
+                studentsHtml = inscription.students.map((student, index) => `
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <h5 class="font-semibold text-gray-800 mb-2">Alumno/a ${index + 1}</h5>
+                        <p><strong>Nombre:</strong> ${student.name} ${student.surname}</p>
+                        <p><strong>Curso:</strong> ${student.course}</p>
+                        <p><strong>Actividades:</strong></p>
+                        <ul class="list-disc list-inside ml-4">
+                            ${student.activities.map(activity => `<li>${activity}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+            } else {
+                // Old format with single student
+                studentsHtml = `
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Datos del Alumno</h4>
+                        <p><strong>Nombre:</strong> ${inscription.student_name || 'N/A'} ${inscription.student_surname || 'N/A'}</p>
+                        <p><strong>Curso:</strong> ${inscription.student_course || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Actividades</h4>
+                        <ul class="list-disc list-inside">
+                            ${inscription.activities ? inscription.activities.map(activity => `<li>${activity}</li>`).join('') : '<li>N/A</li>'}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    ${studentsHtml}
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Datos del Padre/Madre</h4>
+                        <p><strong>Nombre:</strong> ${inscription.parent_name || 'N/A'}</p>
+                        <p><strong>DNI:</strong> ${inscription.parent_dni || 'N/A'}</p>
+                        <p><strong>Teléfono 1:</strong> ${inscription.parent_phone_1 || 'N/A'}</p>
+                        <p><strong>Teléfono 2:</strong> ${inscription.parent_phone_2 || 'N/A'}</p>
+                        <p><strong>Email 1:</strong> ${inscription.parent_email_1 || 'N/A'}</p>
+                        <p><strong>Email 2:</strong> ${inscription.parent_email_2 || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Información Adicional</h4>
+                        <p><strong>Socio AFA:</strong> ${inscription.afa_member ? 'Sí' : 'No'}</p>
+                        <p><strong>Información de salud:</strong> ${inscription.health_info || 'N/A'}</p>
+                        <p><strong>Autorización de imagen:</strong> ${inscription.image_auth_consent || 'N/A'}</p>
+                        <p><strong>Puede salir solo:</strong> ${inscription.can_leave_alone ? 'Sí' : 'No'}</p>
+                        <p><strong>Personas autorizadas:</strong> ${inscription.authorized_pickup || 'N/A'}</p>
+                        <p><strong>Idioma del formulario:</strong> ${inscription.form_language || 'N/A'}</p>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        async function deleteInscription(id) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta inscripción?')) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('inscripcions')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                // Remove from local arrays
+                allInscriptions = allInscriptions.filter(ins => ins.id !== id);
+                filteredInscriptions = filteredInscriptions.filter(ins => ins.id !== id);
+                
+                updateStats();
+                renderTable();
+                showSuccess('Inscripción eliminada correctamente');
+            } catch (error) {
+                console.error('Error deleting inscription:', error);
+                showError('Error al eliminar la inscripción: ' + error.message);
+            }
+        }
+
+        function exportToCSV() {
+            const headers = [
+                'ID', 'Alumnos', 'Cursos', 'Nombre Padre/Madre', 'DNI', 
+                'Teléfono 1', 'Teléfono 2', 'Email 1', 'Email 2', 'Socio AFA', 'Actividades', 
+                'Información Salud', 'Autorización Imagen', 'Puede Salir Solo', 'Personas Autorizadas', 
+                'Idioma Formulario', 'Fecha Inscripción'
+            ];
+
+            const csvContent = [
+                headers.join(','),
+                ...filteredInscriptions.map(ins => {
+                    let studentsInfo = '';
+                    let coursesInfo = '';
+                    let activitiesInfo = '';
+                    
+                    if (ins.students && Array.isArray(ins.students)) {
+                        // New format with multiple students
+                        studentsInfo = ins.students.map(s => `${s.name} ${s.surname}`).join('; ');
+                        coursesInfo = ins.students.map(s => s.course).join('; ');
+                        activitiesInfo = ins.students.flatMap(s => s.activities).join('; ');
+                    } else {
+                        // Old format with single student
+                        studentsInfo = `${ins.student_name || ''} ${ins.student_surname || ''}`;
+                        coursesInfo = ins.student_course || '';
+                        activitiesInfo = ins.activities ? ins.activities.join('; ') : '';
+                    }
+                    
+                    return [
+                        ins.id,
+                        `"${studentsInfo}"`,
+                        coursesInfo,
+                        `"${ins.parent_name || ''}"`,
+                        ins.parent_dni || '',
+                        ins.parent_phone_1 || '',
+                        ins.parent_phone_2 || '',
+                        ins.parent_email_1 || '',
+                        ins.parent_email_2 || '',
+                        ins.afa_member ? 'Sí' : 'No',
+                        `"${activitiesInfo}"`,
+                        `"${ins.health_info || ''}"`,
+                        ins.image_auth_consent || '',
+                        ins.can_leave_alone ? 'Sí' : 'No',
+                        `"${ins.authorized_pickup || ''}"`,
+                        ins.form_language || '',
+                        ins.created_at ? new Date(ins.created_at).toLocaleDateString('es-ES') : 'N/A'
+                    ].join(',');
+                })
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `inscripciones_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function setupEventListeners() {
+            // Refresh button
+            document.getElementById('refresh-btn').addEventListener('click', loadInscriptions);
+            
+            // Export button
+            document.getElementById('export-btn').addEventListener('click', exportToCSV);
+            
+            // Filters
+            document.getElementById('course-filter').addEventListener('change', applyFilters);
+            document.getElementById('activity-filter').addEventListener('change', applyFilters);
+            document.getElementById('status-filter').addEventListener('change', applyFilters);
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+            
+            // Modal close
+            document.getElementById('close-modal').addEventListener('click', () => {
+                document.getElementById('detail-modal').classList.add('hidden');
+            });
+            
+            // Edit modal close
+            document.getElementById('close-edit-modal').addEventListener('click', () => {
+                document.getElementById('edit-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancel-edit').addEventListener('click', () => {
+                document.getElementById('edit-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('save-edit').addEventListener('click', saveInscriptionChanges);
+        }
+
+        function applyFilters() {
+            const courseFilter = document.getElementById('course-filter').value;
+            const activityFilter = document.getElementById('activity-filter').value;
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+            console.log('Aplicando filtros:', { courseFilter, activityFilter, searchTerm });
+            console.log('Total inscripciones:', allInscriptions.length);
+
+            filteredInscriptions = allInscriptions.filter(inscription => {
+                // Check course filter
+                let matchesCourse = true;
+                if (courseFilter) {
+                    if (inscription.students && Array.isArray(inscription.students)) {
+                        // New format with multiple students
+                        console.log('Verificando curso en students:', inscription.students);
+                        const studentCourses = inscription.students.map(s => s.course);
+                        console.log('Cursos encontrados:', studentCourses);
+                        matchesCourse = inscription.students.some(student => {
+                            console.log(`Comparando: "${student.course}" === "${courseFilter}"`);
+                            return student.course === courseFilter;
+                        });
+                        console.log('matchesCourse:', matchesCourse);
+                    } else {
+                        // Old format with single student
+                        matchesCourse = inscription.student_course === courseFilter;
+                    }
+                }
+
+                // Check activity filter
+                let matchesActivity = true;
+                if (activityFilter) {
+                    if (inscription.students && Array.isArray(inscription.students)) {
+                        // New format with multiple students
+                        matchesActivity = inscription.students.some(student => 
+                            student.activities && student.activities.includes(activityFilter)
+                        );
+                    } else {
+                        // Old format with single student
+                        matchesActivity = inscription.activities && inscription.activities.includes(activityFilter);
+                    }
+                }
+
+                // Check search term
+                let matchesSearch = true;
+                if (searchTerm) {
+                    if (inscription.students && Array.isArray(inscription.students)) {
+                        // New format with multiple students
+                        matchesSearch = inscription.students.some(student => 
+                            student.name.toLowerCase().includes(searchTerm) ||
+                            student.surname.toLowerCase().includes(searchTerm)
+                        ) || inscription.parent_name.toLowerCase().includes(searchTerm);
+                    } else {
+                        // Old format with single student
+                        matchesSearch = 
+                            (inscription.student_name && inscription.student_name.toLowerCase().includes(searchTerm)) ||
+                            (inscription.student_surname && inscription.student_surname.toLowerCase().includes(searchTerm)) ||
+                            inscription.parent_name.toLowerCase().includes(searchTerm);
+                    }
+                }
+
+                return matchesCourse && matchesActivity && matchesSearch;
+            });
+
+            console.log('Inscripciones filtradas:', filteredInscriptions.length);
+            currentPage = 1;
+            renderTable();
+        }
+
+        function setLoading(isLoading) {
+            const refreshBtn = document.getElementById('refresh-btn');
+            const refreshText = document.getElementById('refresh-text');
+            const refreshLoader = document.getElementById('refresh-loader');
+            
+            refreshBtn.disabled = isLoading;
+            refreshText.classList.toggle('hidden', isLoading);
+            refreshLoader.classList.toggle('hidden', !isLoading);
+        }
+
+        function showSuccess(message) {
+            // Simple success notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function showError(message) {
+            // Simple error notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
+        }
+
+        // Make functions globally available
+        window.changePage = changePage;
+        window.viewDetails = viewDetails;
+        window.editInscription = editInscription;
+        window.toggleStudentStatus = toggleStudentStatus;
+        window.addNewStudent = addNewStudent;
+        window.deleteInscription = deleteInscription;
+        window.logout = logout;
+
+        let currentEditingInscription = null;
+
+        function editInscription(id) {
+            const inscription = allInscriptions.find(ins => ins.id === id);
+            if (!inscription) return;
+
+            currentEditingInscription = inscription;
+            const modal = document.getElementById('edit-modal');
+            const content = document.getElementById('edit-modal-content');
+            
+            let studentsHtml = '';
+            
+            if (inscription.students && Array.isArray(inscription.students)) {
+                // New format with multiple students
+                studentsHtml = inscription.students.map((student, index) => `
+                    <div class="border border-gray-200 rounded-lg p-4" data-student-index="${index}">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-lg font-semibold text-gray-800">Alumno/a ${index + 1}</h4>
+                            <div class="flex space-x-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" ${student.suspended !== true ? 'checked' : ''} 
+                                           class="student-status mr-2" />
+                                    <span class="text-sm font-medium">Activo</span>
+                                </label>
+                                <button onclick="toggleStudentStatus(${index})" 
+                                        class="${student.suspended !== true ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'} text-sm font-medium">
+                                    ${student.suspended !== true ? 'Suspender' : 'Reactivar'}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <input type="text" value="${student.name}" class="student-name border border-gray-300 rounded-md px-3 py-2 w-full" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                                <input type="text" value="${student.surname}" class="student-surname border border-gray-300 rounded-md px-3 py-2 w-full" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                                <select class="student-course border border-gray-300 rounded-md px-3 py-2 w-full">
+                                    <option value="I3" ${student.course === 'I3' ? 'selected' : ''}>I3</option>
+                                    <option value="I4" ${student.course === 'I4' ? 'selected' : ''}>I4</option>
+                                    <option value="I5" ${student.course === 'I5' ? 'selected' : ''}>I5</option>
+                                    <option value="1PRI" ${student.course === '1PRI' ? 'selected' : ''}>1º Primaria</option>
+                                    <option value="2PRI" ${student.course === '2PRI' ? 'selected' : ''}>2º Primaria</option>
+                                    <option value="3PRI" ${student.course === '3PRI' ? 'selected' : ''}>3º Primaria</option>
+                                    <option value="4PRI" ${student.course === '4PRI' ? 'selected' : ''}>4º Primaria</option>
+                                    <option value="5PRI" ${student.course === '5PRI' ? 'selected' : ''}>5º Primaria</option>
+                                    <option value="6PRI" ${student.course === '6PRI' ? 'selected' : ''}>6º Primaria</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
+                                <div class="space-y-2" id="activities-${index}">
+                                    ${getActivitiesByCourse(student.course).map(activity => `
+                                        <label class="flex items-center">
+                                            <input type="checkbox" value="${activity}" 
+                                                   ${student.activities && student.activities.includes(activity) ? 'checked' : ''}
+                                                   class="student-activity mr-2" />
+                                            <span class="text-sm">${activity}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                // Old format with single student - convert to new format
+                studentsHtml = `
+                    <div class="border border-gray-200 rounded-lg p-4" data-student-index="0">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-lg font-semibold text-gray-800">Alumno/a 1</h4>
+                            <div class="flex space-x-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" ${inscription.student_suspended !== true ? 'checked' : ''} 
+                                           class="student-status mr-2" />
+                                    <span class="text-sm font-medium">Activo</span>
+                                </label>
+                                <button onclick="toggleStudentStatus(0)" 
+                                        class="${inscription.student_suspended !== true ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'} text-sm font-medium">
+                                    ${inscription.student_suspended !== true ? 'Suspender' : 'Reactivar'}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <input type="text" value="${inscription.student_name || ''}" class="student-name border border-gray-300 rounded-md px-3 py-2 w-full" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                                <input type="text" value="${inscription.student_surname || ''}" class="student-surname border border-gray-300 rounded-md px-3 py-2 w-full" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                                <select class="student-course border border-gray-300 rounded-md px-3 py-2 w-full">
+                                    <option value="I3" ${inscription.student_course === 'I3' ? 'selected' : ''}>I3</option>
+                                    <option value="I4" ${inscription.student_course === 'I4' ? 'selected' : ''}>I4</option>
+                                    <option value="I5" ${inscription.student_course === 'I5' ? 'selected' : ''}>I5</option>
+                                    <option value="1PRI" ${inscription.student_course === '1PRI' ? 'selected' : ''}>1º Primaria</option>
+                                    <option value="2PRI" ${inscription.student_course === '2PRI' ? 'selected' : ''}>2º Primaria</option>
+                                    <option value="3PRI" ${inscription.student_course === '3PRI' ? 'selected' : ''}>3º Primaria</option>
+                                    <option value="4PRI" ${inscription.student_course === '4PRI' ? 'selected' : ''}>4º Primaria</option>
+                                    <option value="5PRI" ${inscription.student_course === '5PRI' ? 'selected' : ''}>5º Primaria</option>
+                                    <option value="6PRI" ${inscription.student_course === '6PRI' ? 'selected' : ''}>6º Primaria</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
+                                <div class="space-y-2" id="activities-0">
+                                    ${getActivitiesByCourse(inscription.student_course).map(activity => `
+                                        <label class="flex items-center">
+                                            <input type="checkbox" value="${activity}" 
+                                                   ${inscription.activities && inscription.activities.includes(activity) ? 'checked' : ''}
+                                                   class="student-activity mr-2" />
+                                            <span class="text-sm">${activity}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-800 mb-2">Información del Padre/Madre</h4>
+                        <p><strong>Nombre:</strong> ${inscription.parent_name || 'N/A'}</p>
+                        <p><strong>Teléfono:</strong> ${inscription.parent_phone_1 || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${inscription.parent_email_1 || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Estudiantes</h4>
+                        <div id="students-container" class="space-y-4">
+                            ${studentsHtml}
+                        </div>
+                        <button onclick="addNewStudent()" class="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            + Agregar Nuevo Estudiante
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            
+            // Agregar event listeners para actualizar actividades cuando cambie el curso
             setTimeout(() => {
-                statusMessage.textContent = '';
-                statusMessage.className = 'mt-6 text-center';
-            }, 10000);
+                const courseSelects = document.querySelectorAll('.student-course');
+                courseSelects.forEach((select, index) => {
+                    select.addEventListener('change', function() {
+                        updateActivitiesForStudent(index, this.value);
+                    });
+                });
+            }, 100);
+        }
+
+        function getAvailableActivities() {
+            const activities = new Set();
+            allInscriptions.forEach(ins => {
+                if (ins.students && Array.isArray(ins.students)) {
+                    ins.students.forEach(student => {
+                        if (student.activities && Array.isArray(student.activities)) {
+                            student.activities.forEach(activity => activities.add(activity));
+                        }
+                    });
+                } else if (ins.activities && Array.isArray(ins.activities)) {
+                    ins.activities.forEach(activity => activities.add(activity));
+                }
+            });
+            return Array.from(activities).sort();
+        }
+
+        function getActivitiesByCourse(course) {
+            // Definir las actividades según el curso
+            const courseActivities = {
+                'I3': [
+                    "Teatre Musical en Anglès (Dimarts)",
+                    "Marxa-Marxa en Anglès (Dijous)",
+                    "Iniciació a Timbals (Divendres)"
+                ],
+                'I4': [
+                    "Teatre Musical en Anglès (Dimarts)",
+                    "Marxa-Marxa en Anglès (Dijous)",
+                    "Iniciació a Timbals (Divendres)"
+                ],
+                'I5': [
+                    "Teatre Musical en Anglès (Dimarts)",
+                    "Marxa-Marxa en Anglès (Dijous)",
+                    "Iniciació a Timbals (Divendres)"
+                ],
+                '1PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Futbol (Dimarts)",
+                    "Anglès (Dimecres)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '2PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Futbol (Dimarts)",
+                    "Anglès (Dimecres)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '3PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Futbol (Dimarts)",
+                    "Anglès (Dimecres)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '4PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Anglès (Dimarts)",
+                    "Futbol (Dimarts)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '5PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Anglès (Dimarts)",
+                    "Futbol (Dimarts)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ],
+                '6PRI': [
+                    "Anglès Pur Primària (Dimecres)",
+                    "Anglès (Dimarts)",
+                    "Futbol (Dimarts)",
+                    "Patinatge (Dimecres)",
+                    "Yoga (Dimecres)",
+                    "Futbol (Dijous)",
+                    "Timbals (Divendres)"
+                ]
+            };
+            
+            return courseActivities[course] || [];
+        }
+
+        function updateActivitiesForStudent(index, course) {
+            const activitiesContainer = document.getElementById(`activities-${index}`);
+            if (!activitiesContainer) return;
+            
+            const activities = getActivitiesByCourse(course);
+            const currentChecked = Array.from(activitiesContainer.querySelectorAll('.student-activity:checked'))
+                .map(checkbox => checkbox.value);
+            
+            activitiesContainer.innerHTML = activities.map(activity => `
+                <label class="flex items-center">
+                    <input type="checkbox" value="${activity}" 
+                           ${currentChecked.includes(activity) ? 'checked' : ''}
+                           class="student-activity mr-2" />
+                    <span class="text-sm">${activity}</span>
+                </label>
+            `).join('');
+        }
+
+        function toggleStudentStatus(index) {
+            const studentsContainer = document.getElementById('students-container');
+            const studentElement = studentsContainer.querySelector(`[data-student-index="${index}"]`);
+            
+            if (studentElement) {
+                const statusCheckbox = studentElement.querySelector('.student-status');
+                const toggleButton = studentElement.querySelector('button[onclick*="toggleStudentStatus"]');
+                const isCurrentlyActive = statusCheckbox.checked;
+                
+                // Ya no hay restricción para suspender el último estudiante
+                
+                // Cambiar el estado
+                statusCheckbox.checked = !isCurrentlyActive;
+                
+                // Actualizar el botón y el estilo
+                if (isCurrentlyActive) {
+                    // Suspender
+                    toggleButton.textContent = 'Reactivar';
+                    toggleButton.className = 'text-green-600 hover:text-green-800 text-sm font-medium';
+                    studentElement.classList.add('student-suspended');
+                } else {
+                    // Reactivar
+                    toggleButton.textContent = 'Suspender';
+                    toggleButton.className = 'text-orange-600 hover:text-orange-800 text-sm font-medium';
+                    studentElement.classList.remove('student-suspended');
+                }
+            }
+        }
+
+        function addNewStudent() {
+            const studentsContainer = document.getElementById('students-container');
+            const currentCount = studentsContainer.querySelectorAll('[data-student-index]').length;
+            const newIndex = currentCount;
+            
+            const newStudentHtml = `
+                <div class="border border-gray-200 rounded-lg p-4" data-student-index="${newIndex}">
+                    <div class="flex justify-between items-start mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800">Alumno/a ${newIndex + 1}</h4>
+                        <div class="flex space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" checked class="student-status mr-2" />
+                                <span class="text-sm font-medium">Activo</span>
+                            </label>
+                            <button onclick="toggleStudentStatus(${newIndex})" 
+                                    class="text-orange-600 hover:text-orange-800 text-sm font-medium">
+                                Suspender
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                            <input type="text" class="student-name border border-gray-300 rounded-md px-3 py-2 w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                            <input type="text" class="student-surname border border-gray-300 rounded-md px-3 py-2 w-full" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                            <select class="student-course border border-gray-300 rounded-md px-3 py-2 w-full">
+                                <option value="I3">I3</option>
+                                <option value="I4">I4</option>
+                                <option value="I5">I5</option>
+                                <option value="1PRI">1º Primaria</option>
+                                <option value="2PRI">2º Primaria</option>
+                                <option value="3PRI">3º Primaria</option>
+                                <option value="4PRI">4º Primaria</option>
+                                <option value="5PRI">5º Primaria</option>
+                                <option value="6PRI">6º Primaria</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Actividades</label>
+                            <div class="space-y-2" id="activities-${newIndex}">
+                                ${getActivitiesByCourse('I3').map(activity => `
+                                    <label class="flex items-center">
+                                        <input type="checkbox" value="${activity}" class="student-activity mr-2" />
+                                        <span class="text-sm">${activity}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            studentsContainer.insertAdjacentHTML('beforeend', newStudentHtml);
+            
+            // Agregar event listener para el nuevo estudiante
+            setTimeout(() => {
+                const newSelect = document.querySelector(`[data-student-index="${newIndex}"] .student-course`);
+                if (newSelect) {
+                    newSelect.addEventListener('change', function() {
+                        updateActivitiesForStudent(newIndex, this.value);
+                    });
+                }
+            }, 100);
+        }
+
+        function reindexStudents() {
+            const studentsContainer = document.getElementById('students-container');
+            const students = studentsContainer.querySelectorAll('[data-student-index]');
+            
+            students.forEach((student, index) => {
+                student.setAttribute('data-student-index', index);
+                student.querySelector('h4').textContent = `Alumno/a ${index + 1}`;
+                student.querySelector('button').setAttribute('onclick', `removeStudent(${index})`);
+            });
+        }
+
+        async function saveInscriptionChanges() {
+            if (!currentEditingInscription) return;
+
+            const studentsContainer = document.getElementById('students-container');
+            const students = studentsContainer.querySelectorAll('[data-student-index]');
+            
+            if (students.length === 0) {
+                showError('Debe haber al menos un estudiante en la inscripción.');
+                return;
+            }
+
+            const updatedStudents = [];
+            let hasActiveStudent = false;
+            
+            students.forEach(studentElement => {
+                const name = studentElement.querySelector('.student-name').value.trim();
+                const surname = studentElement.querySelector('.student-surname').value.trim();
+                const course = studentElement.querySelector('.student-course').value;
+                const activities = Array.from(studentElement.querySelectorAll('.student-activity:checked'))
+                    .map(checkbox => checkbox.value);
+                const isActive = studentElement.querySelector('.student-status').checked;
+
+                if (name && surname && course) {
+                    updatedStudents.push({
+                        name,
+                        surname,
+                        course,
+                        activities,
+                        suspended: !isActive
+                    });
+                    
+                    if (isActive) {
+                        hasActiveStudent = true;
+                    }
+                }
+            });
+
+            if (updatedStudents.length === 0) {
+                showError('Todos los estudiantes deben tener nombre, apellidos y curso completados.');
+                return;
+            }
+
+            // Ya no hay restricción para tener al menos un estudiante activo
+
+            try {
+                const { error } = await supabaseClient
+                    .from('inscripcions')
+                    .update({ students: updatedStudents })
+                    .eq('id', currentEditingInscription.id);
+
+                if (error) throw error;
+
+                // Actualizar datos locales
+                const index = allInscriptions.findIndex(ins => ins.id === currentEditingInscription.id);
+                if (index !== -1) {
+                    allInscriptions[index].students = updatedStudents;
+                    filteredInscriptions = [...allInscriptions];
+                }
+
+                updateStats();
+                renderTable();
+                document.getElementById('edit-modal').classList.add('hidden');
+                showSuccess('Inscripción actualizada correctamente');
+            } catch (error) {
+                console.error('Error updating inscription:', error);
+                showError('Error al actualizar la inscripción: ' + error.message);
+            }
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar la sesión?')) {
+                sessionStorage.removeItem('admin_authenticated');
+                sessionStorage.removeItem('admin_user');
+                sessionStorage.removeItem('admin_user_id');
+                sessionStorage.removeItem('admin_login_time');
+                window.location.href = 'admin_login.html';
+            }
         }
     </script>
 </body>
 </html>
-
