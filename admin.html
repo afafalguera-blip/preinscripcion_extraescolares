@@ -30,6 +30,12 @@
         .status-pending { background-color: #fef3c7; color: #92400e; }
         .status-confirmed { background-color: #d1fae5; color: #065f46; }
         .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+        .student-suspended {
+            opacity: 0.6;
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            border-width: 2px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -1059,17 +1065,15 @@
                 
                 // Actualizar el botón y el estilo
                 if (isCurrentlyActive) {
+                    // Suspender
                     toggleButton.textContent = 'Reactivar';
                     toggleButton.className = 'text-green-600 hover:text-green-800 text-sm font-medium';
-                    studentElement.style.opacity = '0.6';
-                    studentElement.style.backgroundColor = '#fef3c7'; // Amarillo claro para suspendido
-                    studentElement.style.borderColor = '#f59e0b'; // Borde naranja
+                    studentElement.classList.add('student-suspended');
                 } else {
+                    // Reactivar
                     toggleButton.textContent = 'Suspender';
                     toggleButton.className = 'text-orange-600 hover:text-orange-800 text-sm font-medium';
-                    studentElement.style.opacity = '1';
-                    studentElement.style.backgroundColor = '';
-                    studentElement.style.borderColor = '';
+                    studentElement.classList.remove('student-suspended');
                 }
             }
         }
@@ -1158,6 +1162,7 @@
             }
 
             const updatedStudents = [];
+            let hasActiveStudent = false;
             
             students.forEach(studentElement => {
                 const name = studentElement.querySelector('.student-name').value.trim();
@@ -1175,11 +1180,20 @@
                         activities,
                         suspended: !isActive
                     });
+                    
+                    if (isActive) {
+                        hasActiveStudent = true;
+                    }
                 }
             });
 
             if (updatedStudents.length === 0) {
                 showError('Todos los estudiantes deben tener nombre, apellidos y curso completados.');
+                return;
+            }
+
+            if (!hasActiveStudent) {
+                showError('Debe haber al menos un estudiante activo en la inscripción.');
                 return;
             }
 
