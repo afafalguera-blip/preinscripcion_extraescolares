@@ -366,63 +366,101 @@
             const endIndex = startIndex + itemsPerPage;
             const pageData = filteredInscriptions.slice(startIndex, endIndex);
 
-            tbody.innerHTML = pageData.map(inscription => {
-                // Handle both old format (single student) and new format (multiple students)
-                let studentsInfo = '';
-                let activitiesInfo = '';
-                
+            // Crear array de filas individuales para cada estudiante
+            const tableRows = [];
+            
+            pageData.forEach(inscription => {
                 if (inscription.students && Array.isArray(inscription.students)) {
-                    // New format with multiple students
-                    studentsInfo = inscription.students.map(student => 
-                        `${student.name} ${student.surname} (${student.course})`
-                    ).join(', ');
-                    
-                    const allActivities = inscription.students.flatMap(student => student.activities);
-                    activitiesInfo = allActivities.slice(0, 2).join(', ') + 
-                        (allActivities.length > 2 ? ` +${allActivities.length - 2} más` : '');
+                    // New format with multiple students - crear una fila por estudiante
+                    inscription.students.forEach((student, studentIndex) => {
+                        const activitiesInfo = student.activities ? 
+                            (student.activities.slice(0, 2).join(', ') + 
+                            (student.activities.length > 2 ? ` +${student.activities.length - 2} más` : '')) : 
+                            'N/A';
+                        
+                        const isFirstStudent = studentIndex === 0;
+                        const rowSpan = isFirstStudent ? inscription.students.length : 0;
+                        
+                        tableRows.push(`
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${student.name} ${student.surname}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-900">${student.course}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">${activitiesInfo}</div>
+                            </td>
+                            ${isFirstStudent ? `
+                            <td class="px-6 py-4 whitespace-nowrap" rowspan="${inscription.students.length}">
+                                <div class="text-sm text-gray-900">${inscription.parent_phone_1 || 'N/A'}</div>
+                                <div class="text-sm text-gray-500">${inscription.parent_email_1 || 'N/A'}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap" rowspan="${inscription.students.length}">
+                                <span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
+                                    ${inscription.afa_member ? 'Sí' : 'No'}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" rowspan="${inscription.students.length}">
+                                ${inscription.created_at ? new Date(inscription.created_at).toLocaleDateString('es-ES') : 'N/A'}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" rowspan="${inscription.students.length}">
+                                <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                    Ver detalles
+                                </button>
+                                <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
+                                    Eliminar
+                                </button>
+                            </td>
+                            ` : ''}
+                        </tr>
+                        `);
+                    });
                 } else {
                     // Old format with single student
-                    studentsInfo = `${inscription.student_name || ''} ${inscription.student_surname || ''}`;
-                    activitiesInfo = inscription.activities ? 
+                    const activitiesInfo = inscription.activities ? 
                         (inscription.activities.slice(0, 2).join(', ') + 
                         (inscription.activities.length > 2 ? ` +${inscription.activities.length - 2} más` : '')) : 
                         'N/A';
+                    
+                    tableRows.push(`
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${inscription.student_name || ''} ${inscription.student_surname || ''}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm text-gray-900">${inscription.student_course || 'N/A'}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">${activitiesInfo}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${inscription.parent_phone_1 || 'N/A'}</div>
+                            <div class="text-sm text-gray-500">${inscription.parent_email_1 || 'N/A'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
+                                ${inscription.afa_member ? 'Sí' : 'No'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${inscription.created_at ? new Date(inscription.created_at).toLocaleDateString('es-ES') : 'N/A'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                Ver detalles
+                            </button>
+                            <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                    `);
                 }
-                
-                return `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">${studentsInfo}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900">${inscription.students ? inscription.students.map(s => s.course).join(', ') : (inscription.student_course || 'N/A')}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="text-sm text-gray-900">${activitiesInfo}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">${inscription.parent_phone_1 || 'N/A'}</div>
-                        <div class="text-sm text-gray-500">${inscription.parent_email_1 || 'N/A'}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
-                            ${inscription.afa_member ? 'Sí' : 'No'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${inscription.created_at ? new Date(inscription.created_at).toLocaleDateString('es-ES') : 'N/A'}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="viewDetails('${inscription.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
-                            Ver detalles
-                        </button>
-                        <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
-                            Eliminar
-                        </button>
-                    </td>
-                </tr>
-            `;
-            }).join('');
+            });
+
+            tbody.innerHTML = tableRows.join('');
 
             renderPagination();
         }
