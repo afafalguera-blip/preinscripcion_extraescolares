@@ -196,6 +196,42 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Add Third Student Button -->
+                <div class="text-center mb-4">
+                    <button type="button" id="add-third-student" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors hidden" data-lang="add_third_student">
+                        + Afegir tercer alumne/a
+                    </button>
+                </div>
+
+                <!-- Student 3 (Hidden by default) -->
+                <div id="student-3-section" class="bg-purple-50 p-4 rounded-lg mb-4 hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-semibold text-purple-800" data-lang="student_3_title">Alumne/a 3</h4>
+                        <button type="button" id="remove-third-student" class="text-red-600 hover:text-red-800 text-sm" data-lang="remove_student">
+                            ✕ Eliminar
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="student3-name" class="block text-sm font-medium text-gray-700" data-lang="student_name">Nom</label>
+                            <input type="text" id="student3-name" name="student3_name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="student3-surname" class="block text-sm font-medium text-gray-700" data-lang="student_surname">Cognoms</label>
+                            <input type="text" id="student3-surname" name="student3_surname" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="student3-course" class="block text-sm font-medium text-gray-700" data-lang="student_course">Curs</label>
+                            <select id="student3-course" name="student3_course" class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <option value="" disabled selected data-lang="select_course">Selecciona un curs</option>
+                                <option value="I3">I3</option><option value="I4">I4</option><option value="I5">I5</option>
+                                <option value="1PRI" data-lang="course_1pri">1r Primària</option><option value="2PRI" data-lang="course_2pri">2n Primària</option><option value="3PRI" data-lang="course_3pri">3r Primària</option>
+                                <option value="4PRI" data-lang="course_4pri">4t Primària</option><option value="5PRI" data-lang="course_5pri">5è Primària</option><option value="6PRI" data-lang="course_6pri">6è Primària</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </fieldset>
 
             <!-- Activities Section -->
@@ -232,6 +268,23 @@
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
                     </div>
                     <div id="activities-primaria2-2" class="form-section space-y-4">
+                        <h5 class="font-medium text-gray-700" data-lang="primaria2_options">Opcions per a 4t, 5è i 6è de Primària</h5>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
+                    </div>
+                </div>
+
+                <!-- Student 3 Activities (Hidden by default) -->
+                <div id="student3-activities" class="mb-6 hidden">
+                    <h4 class="font-semibold text-purple-800 mb-4" data-lang="student3_activities_title">Activitats per a l'Alumne/a 3</h4>
+                    <div id="activities-infantil-3" class="form-section space-y-4">
+                        <h5 class="font-medium text-gray-700" data-lang="infantil_options">Opcions per a Infantil (I3-I5)</h5>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
+                    </div>
+                    <div id="activities-primaria1-3" class="form-section space-y-4">
+                        <h5 class="font-medium text-gray-700" data-lang="primaria1_options">Opcions per a 1r, 2n i 3r de Primària</h5>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
+                    </div>
+                    <div id="activities-primaria2-3" class="form-section space-y-4">
                         <h5 class="font-medium text-gray-700" data-lang="primaria2_options">Opcions per a 4t, 5è i 6è de Primària</h5>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"></div>
                     </div>
@@ -418,7 +471,9 @@
                 students_data_legend: "Dades dels Alumnes",
                 student_1_title: "Alumne/a 1",
                 student_2_title: "Alumne/a 2",
+                student_3_title: "Alumne/a 3",
                 add_second_student: "+ Afegir segon alumne/a",
+                add_third_student: "+ Afegir tercer alumne/a",
                 remove_student: "✕ Eliminar",
                 student_name: "Nom",
                 student_surname: "Cognoms",
@@ -429,12 +484,13 @@
                 activities_subtitle: "Selecciona les activitats desitjades per a cada alumne/a (mínim una). Les opcions apareixeran quan triïs un curs.",
                 student1_activities_title: "Activitats per a l'Alumne/a 1",
                 student2_activities_title: "Activitats per a l'Alumne/a 2",
+                student3_activities_title: "Activitats per a l'Alumne/a 3",
                 infantil_options: "Opcions per a Infantil (I3-I5)",
                 primaria1_options: "Opcions per a 1r, 2n i 3r de Primària",
                 primaria2_options: "Opcions per a 4t, 5è i 6è de Primària",
                 activity_teatre_musical_dm: "Teatre Musical en Anglès", activity_marxa_angles_dj: "Marxa-Marxa en Anglès", activity_timbals_iniciacio_dv: "Iniciació a Timbals",
                 activity_futbol_dm: "Futbol", activity_patinatge_dc: "Patinatge", activity_yoga_dc: "Yoga", activity_futbol_dj: "Futbol", activity_timbals_dv: "Timbals", activity_angles_dt: "Anglès", activity_angles_dc: "Anglès",
-                day_dl: "Dilluns", day_dt: "Dimarts", day_dc: "Dimecres", day_dj: "Dijous", day_dv: "Divendres",
+                day_dl: "Dilluns", day_dt: "Dimarts", day_dm: "Dimarts", day_dc: "Dimecres", day_dj: "Dijous", day_dv: "Divendres",
                 parent_data_legend: "Dades del Pare/Mare/Tutor/a",
                 parent_name: "Nom i Cognoms", parent_dni: "DNI/NIF", parent_phone_1: "Telèfon de Contacte 1", parent_phone_2: "Telèfon de Contacte 2", parent_email_1: "Email de Contacte 1", parent_email_2: "Email de Contacte 2",
                 optional: "(Opcional)",
@@ -516,7 +572,9 @@
                 students_data_legend: "Datos de los Alumnos",
                 student_1_title: "Alumno/a 1",
                 student_2_title: "Alumno/a 2",
+                student_3_title: "Alumno/a 3",
                 add_second_student: "+ Añadir segundo alumno/a",
+                add_third_student: "+ Añadir tercer alumno/a",
                 remove_student: "✕ Eliminar",
                 student_name: "Nombre", student_surname: "Apellidos", student_course: "Curso",
                 select_course: "Selecciona un curso",
@@ -525,12 +583,13 @@
                 activities_subtitle: "Selecciona las actividades deseadas para cada alumno/a (mínimo una). Las opciones aparecerán al elegir un curso.",
                 student1_activities_title: "Actividades para el Alumno/a 1",
                 student2_activities_title: "Actividades para el Alumno/a 2",
+                student3_activities_title: "Actividades para el Alumno/a 3",
                 infantil_options: "Opciones para Infantil (I3-I5)",
                 primaria1_options: "Opciones para 1º, 2º y 3º de Primaria",
                 primaria2_options: "Opciones para 4º, 5º y 6º de Primaria",
                 activity_teatre_musical_dm: "Teatro Musical en Inglés", activity_marxa_angles_dj: "Marcha-Marcha en Inglés", activity_timbals_iniciacio_dv: "Iniciación a Timbales",
                 activity_futbol_dm: "Fútbol", activity_patinatge_dc: "Patinaje", activity_yoga_dc: "Yoga", activity_futbol_dj: "Fútbol", activity_timbals_dv: "Timbales", activity_angles_dt: "Inglés", activity_angles_dc: "Inglés",
-                day_dl: "Lunes", day_dt: "Martes", day_dc: "Miércoles", day_dj: "Jueves", day_dv: "Viernes",
+                day_dl: "Lunes", day_dt: "Martes", day_dm: "Martes", day_dc: "Miércoles", day_dj: "Jueves", day_dv: "Viernes",
                 parent_data_legend: "Datos del Padre/Madre/Tutor/a",
                 parent_name: "Nombre y Apellidos", parent_dni: "DNI/NIF", parent_phone_1: "Teléfono de Contacto 1", parent_phone_2: "Teléfono de Contacto 2", parent_email_1: "Email de Contacto 1", parent_email_2: "Email de Contacto 2",
                 optional: "(Opcional)",
@@ -641,7 +700,10 @@
         };
 
         const createActivityCard = (activity, studentNumber) => {
-            const isEnglishClass = activity.value.includes('Anglès') && (activity.value.includes('Dimarts') || activity.value.includes('Dimecres'));
+            // Solo las clases de inglés de martes y miércoles NO se pagan por AFA
+            const isEnglishClassNotPaidByAFA = activity.value.includes('Anglès') && 
+                (activity.value.includes('Dimarts') || activity.value.includes('Dimecres')) &&
+                !activity.value.includes('Teatre Musical') && !activity.value.includes('Marxa-Marxa');
             
             return `
                 <label class="activity-card flex flex-col justify-between p-3 rounded-lg hover:shadow-md cursor-pointer">
@@ -649,7 +711,7 @@
                     <span class="font-semibold text-gray-800 text-sm md:text-base" data-lang="${activity.langKey}"></span>
                     <span class="text-xs text-gray-500 mt-1">${activity.schedule}</span>
                     <span class="text-xs text-white bg-blue-500 rounded-full px-2 py-0.5 mt-2 self-start" data-lang="${activity.dayLangKey}"></span>
-                    ${isEnglishClass ? '<span class="text-xs text-red-600 font-semibold mt-1" data-lang="english_payment_warning">⚠️ No es paga per AFA</span>' : ''}
+                    ${isEnglishClassNotPaidByAFA ? '<span class="text-xs text-red-600 font-semibold mt-1" data-lang="english_payment_warning">⚠️ No es paga per AFA</span>' : ''}
                 </label>
             `;
         }
@@ -672,6 +734,15 @@
             infantil2Container.innerHTML = allActivities.infantil.map(activity => createActivityCard(activity, '2')).join('');
             primaria1_2Container.innerHTML = allActivities.primaria1.map(activity => createActivityCard(activity, '2')).join('');
             primaria2_2Container.innerHTML = allActivities.primaria2.map(activity => createActivityCard(activity, '2')).join('');
+
+            // Student 3 activities
+            const infantil3Container = document.querySelector('#activities-infantil-3 .grid');
+            const primaria1_3Container = document.querySelector('#activities-primaria1-3 .grid');
+            const primaria2_3Container = document.querySelector('#activities-primaria2-3 .grid');
+
+            infantil3Container.innerHTML = allActivities.infantil.map(activity => createActivityCard(activity, '3')).join('');
+            primaria1_3Container.innerHTML = allActivities.primaria1.map(activity => createActivityCard(activity, '3')).join('');
+            primaria2_3Container.innerHTML = allActivities.primaria2.map(activity => createActivityCard(activity, '3')).join('');
 
             document.querySelectorAll('[data-lang]').forEach(element => {
                 const key = element.dataset.lang;
@@ -713,6 +784,7 @@
 
         const student1Course = document.getElementById('student1-course');
         const student2Course = document.getElementById('student2-course');
+        const student3Course = document.getElementById('student3-course');
         const form = document.getElementById('inscription-form');
         const statusMessage = document.getElementById('status-message');
         const submitButton = document.getElementById('submit-button');
@@ -746,18 +818,21 @@
 
         student1Course.addEventListener('change', () => updateActivitiesForStudent('1'));
         student2Course.addEventListener('change', () => updateActivitiesForStudent('2'));
+        student3Course.addEventListener('change', () => updateActivitiesForStudent('3'));
 
         // Add/Remove second student functionality
         document.getElementById('add-second-student').addEventListener('click', () => {
             document.getElementById('student-2-section').classList.remove('hidden');
             document.getElementById('student2-activities').classList.remove('hidden');
             document.getElementById('add-second-student').classList.add('hidden');
+            document.getElementById('add-third-student').classList.remove('hidden');
         });
 
         document.getElementById('remove-second-student').addEventListener('click', () => {
             document.getElementById('student-2-section').classList.add('hidden');
             document.getElementById('student2-activities').classList.add('hidden');
             document.getElementById('add-second-student').classList.remove('hidden');
+            document.getElementById('add-third-student').classList.add('hidden');
             
             // Clear second student data
             document.getElementById('student2-name').value = '';
@@ -770,6 +845,33 @@
             
             // Hide all activity sections for student 2
             document.querySelectorAll('#student2-activities .form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+        });
+
+        // Add/Remove third student functionality
+        document.getElementById('add-third-student').addEventListener('click', () => {
+            document.getElementById('student-3-section').classList.remove('hidden');
+            document.getElementById('student3-activities').classList.remove('hidden');
+            document.getElementById('add-third-student').classList.add('hidden');
+        });
+
+        document.getElementById('remove-third-student').addEventListener('click', () => {
+            document.getElementById('student-3-section').classList.add('hidden');
+            document.getElementById('student3-activities').classList.add('hidden');
+            document.getElementById('add-third-student').classList.remove('hidden');
+            
+            // Clear third student data
+            document.getElementById('student3-name').value = '';
+            document.getElementById('student3-surname').value = '';
+            document.getElementById('student3-course').value = '';
+            document.querySelectorAll('input[name="activity_3"]').forEach(input => {
+                input.checked = false;
+                input.closest('.activity-card').classList.remove('selected');
+            });
+            
+            // Hide all activity sections for student 3
+            document.querySelectorAll('#student3-activities .form-section').forEach(section => {
                 section.classList.remove('active');
             });
         });
@@ -828,6 +930,19 @@
                 });
             }
             
+            // Student 3 (if added)
+            if (formData.get('student3_name') && formData.get('student3_surname') && formData.get('student3_course')) {
+                const selectedActivities3 = document.querySelectorAll('input[name="activity_3"]:checked');
+                const selectedActivities3Values = Array.from(selectedActivities3).map(input => input.value);
+                
+                students.push({
+                    name: formData.get('student3_name'),
+                    surname: formData.get('student3_surname'),
+                    course: formData.get('student3_course'),
+                    activities: selectedActivities3Values
+                });
+            }
+            
             const submissionData = {
                 students: students,
                 parent_name: formData.get('parent_name'), parent_dni: formData.get('parent_dni'), parent_phone_1: formData.get('parent_phone_1'),
@@ -856,6 +971,12 @@
                 // Clear course selections to hide activity sections
                 document.getElementById('student1-course').value = '';
                 document.getElementById('student2-course').value = '';
+                document.getElementById('student3-course').value = '';
+                
+                // Hide third student if visible
+                document.getElementById('student-3-section').classList.add('hidden');
+                document.getElementById('student3-activities').classList.add('hidden');
+                document.getElementById('add-third-student').classList.add('hidden');
             } catch (error) {
                 console.error('Error submitting to Supabase:', error);
                 showStatus(translations[currentLang].status_error_generic.replace('{error}', error.message), 'error');
