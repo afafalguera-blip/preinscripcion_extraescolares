@@ -554,7 +554,7 @@
                     <li>A partir de setembre les sol·licituts d'alta i de baixa de les activitats proposades hauran de lliurar-se a l'AFA abans del dia 20 del mes en curs (una vegada depassat aquest termini, la baixa NO serà efectiva fins al mes següent i s'haurà d'abonar la quota corresponent). Es poden enviar via e-mail o presencialment a la oficina de l'AFA.</li>
                     <li>Totes les activitats son de pagament mensual, amb transferència bancària al compte del Banc Sabadell ES22.0081.1604.7400.0103.8208 abans del dia 10 del mes en curs. Important! Indicar al concepte nom de l'alumne i activitat.</li>
                     <li>Si no hi hagués un nombre mínim d'alumnes, l'activitat no es podrà realitzar i s'oferiran alternatives en la mesura que sigui possible.</li>
-                    <li>Si les sol·licituts superen el nombre de places ofertes, es tindrà en compte l'ordre d'inscripció.</li>
+                    <li>Si les sol·licituds superen el nombre de places ofertes, es tindrà en compte l'ordre d'inscripció.</li>
                     <li>No es descomptarà del preu ni es recuperarà la no assistència dels alumnes, ni els dies de vacances i festius segons el calendari escolar. No obstant això, si són recuperables els dies de classe no impartits per causes atribuïbles a l'empresa d'extraescolars.</li>
                     <li>Els impagaments que es produeixin causaran la baixa de l'alumne en totes les activitats extraescolars.</li>
                     <li>És obligació dels pares/tutors advertir al formulari d'inscripció de qualsevol malaltia, al·lèrgia o intolerància que l'alumne pogués patir.</li>
@@ -814,6 +814,7 @@
             const infantil = document.getElementById(`activities-infantil-${studentNumber}`);
             const primaria1 = document.getElementById(`activities-primaria1-${studentNumber}`);
             const primaria2 = document.getElementById(`activities-primaria2-${studentNumber}`);
+            const activitiesContainer = document.getElementById(`student${studentNumber}-activities`);
             
             // Hide all activity sections for this student
             [infantil, primaria1, primaria2].forEach(el => el.classList.remove('active'));
@@ -824,13 +825,24 @@
                 input.closest('.activity-card').classList.remove('selected');
             });
 
+            let sectionShown = false;
             // Show only the appropriate activity section for this student's course
             if (['I3', 'I4', 'I5'].includes(course)) {
                 infantil.classList.add('active');
+                sectionShown = true;
             } else if (['1PRI', '2PRI', '3PRI'].includes(course)) {
                 primaria1.classList.add('active');
+                sectionShown = true;
             } else if (['4PRI', '5PRI', '6PRI'].includes(course)) {
                 primaria2.classList.add('active');
+                sectionShown = true;
+            }
+
+            // If a valid course was selected and a section is now visible, scroll to it.
+            if (sectionShown) {
+                setTimeout(() => {
+                    activitiesContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100); // A small delay ensures the element is rendered before we scroll.
             }
         };
 
@@ -1062,4 +1074,3 @@
     </script>
 </body>
 </html>
-
