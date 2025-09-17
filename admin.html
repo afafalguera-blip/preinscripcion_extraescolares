@@ -57,6 +57,8 @@
                                 </svg>
                             </span>
                             <div id="refresh-loader" class="loader hidden"></div>
+                            <!-- CORRECCIÓN: Se añade el span faltante -->
+                            <span id="refresh-text" class="ml-2 hidden lg:block">Actualizar</span>
                         </button>
                         
                         <!-- Export Button -->
@@ -267,7 +269,7 @@
     </div>
 
     <script>
-        // Verificar autenticación INMEDIATAMENTE al cargar la página
+        // Check authentication IMMEDIATELY on page load
         function checkAuthentication() {
             const isAuthenticated = sessionStorage.getItem('admin_authenticated');
             const loginTime = sessionStorage.getItem('admin_login_time');
@@ -278,13 +280,13 @@
                 return false;
             }
             
-            // Verificar que la sesión no haya expirado (24 horas)
+            // Check if session has expired (24 hours)
             const loginDate = new Date(loginTime);
             const now = new Date();
             const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
             
             if (hoursDiff >= 24) {
-                // Sesión expirada
+                // Expired session
                 sessionStorage.removeItem('admin_authenticated');
                 sessionStorage.removeItem('admin_user');
                 sessionStorage.removeItem('admin_user_id');
@@ -296,12 +298,12 @@
             return true;
         }
 
-        // Verificar autenticación ANTES de mostrar cualquier contenido
+        // Check authentication BEFORE showing any content
         if (!checkAuthentication()) {
-            // Ocultar todo el contenido y mostrar mensaje de redirección
+            // Hide all content and show redirection message
             document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen bg-gray-100"><div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p class="text-gray-600">Redirigiendo al login...</p></div></div>';
-            // Detener la ejecución del resto del script
-            throw new Error('No autorizado');
+            // Stop execution of the rest of the script
+            throw new Error('Not authorized');
         }
     </script>
 
@@ -309,7 +311,7 @@
 
         const { createClient } = supabase;
         
-        // Configuración de Supabase (usa las mismas credenciales)
+        // Supabase configuration (use the same credentials)
         const SUPABASE_URL = "https://zaxbtnjkidqwzqsehvld.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGJ0bmpraWRxd3pxc2VodmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMjc2NTMsImV4cCI6MjA3MzYwMzY1M30.9MNjQdeLvW_UaxZz0XQmR6jQSakzF-UzBWvdboWWHRg";
         
@@ -329,7 +331,7 @@
 
         // Load data on page load
         document.addEventListener('DOMContentLoaded', () => {
-            // Verificación adicional de seguridad
+            // Additional security check
             if (!checkAuthentication()) {
                 return;
             }
@@ -339,7 +341,7 @@
         });
 
         async function loadInscriptions() {
-            // Verificar autenticación antes de cargar datos
+            // Check authentication before loading data
             if (!checkAuthentication()) {
                 return;
             }
@@ -433,19 +435,19 @@
             const endIndex = startIndex + itemsPerPage;
             const pageData = filteredInscriptions.slice(startIndex, endIndex);
 
-            // Crear array de filas individuales para cada estudiante
+            // Create individual row arrays for each student
             const tableRows = [];
             const mobileCards = [];
             
             pageData.forEach(inscription => {
                 if (inscription.students && Array.isArray(inscription.students)) {
-                    // New format with multiple students - crear una fila por estudiante
+                    // New format with multiple students - create a row per student
                     inscription.students.forEach((student, studentIndex) => {
-                        // Verificar si el estudiante está suspendido
+                        // Check if student is suspended
                         const isSuspended = student.suspended === true;
                         const statusFilter = document.getElementById('status-filter').value;
                         
-                        // Aplicar filtro de estado solo si no es "all"
+                        // Apply status filter only if it's not "all"
                         if (statusFilter === 'active' && isSuspended) return;
                         if (statusFilter === 'suspended' && !isSuspended) return;
                         
@@ -558,7 +560,7 @@
                     const isSuspended = inscription.student_suspended === true;
                     const statusFilter = document.getElementById('status-filter').value;
                     
-                    // Aplicar filtro de estado solo si no es "all"
+                    // Apply status filter only if it's not "all"
                     if (statusFilter === 'active' && isSuspended) return;
                     if (statusFilter === 'suspended' && !isSuspended) return;
                     
@@ -668,14 +670,10 @@
                 }
             });
 
-            // Renderizar tabla (desktop)
+            // Render table (desktop)
             tbody.innerHTML = tableRows.join('');
             
-            // Debug para móvil
-            console.log('Mobile cards count:', mobileCards.length);
-            console.log('Cards container:', cardsContainer);
-            
-            // Renderizar tarjetas (mobile)
+            // Render cards (mobile)
             if (cardsContainer) {
                 cardsContainer.innerHTML = mobileCards.length > 0 ? mobileCards.join('') : 
                     '<div class="text-center py-8 text-gray-500">No hay inscripciones para mostrar</div>';
@@ -742,14 +740,13 @@
         }
 
         function viewDetails(id) {
-            const inscription = allInscriptions.find(ins => ins.id === id);
+            const inscription = allInscriptions.find(ins => ins.id == id); // Use == for potential type coercion
             if (!inscription) return;
 
             const modal = document.getElementById('detail-modal');
             const content = document.getElementById('modal-content');
             
             let studentsHtml = '';
-            let activitiesHtml = '';
             
             if (inscription.students && Array.isArray(inscription.students)) {
                 // New format with multiple students
@@ -820,8 +817,8 @@
                 if (error) throw error;
 
                 // Remove from local arrays
-                allInscriptions = allInscriptions.filter(ins => ins.id !== id);
-                filteredInscriptions = filteredInscriptions.filter(ins => ins.id !== id);
+                allInscriptions = allInscriptions.filter(ins => ins.id != id); // Use !=
+                filteredInscriptions = filteredInscriptions.filter(ins => ins.id != id); // Use !=
                 
                 updateStats();
                 renderTable();
@@ -871,17 +868,17 @@
                         ins.parent_email_2 || '',
                         ins.afa_member ? 'Sí' : 'No',
                         `"${activitiesInfo}"`,
-                        `"${ins.health_info || ''}"`,
+                        `"${(ins.health_info || '').replace(/"/g, '""')}"`,
                         ins.image_auth_consent || '',
                         ins.can_leave_alone ? 'Sí' : 'No',
-                        `"${ins.authorized_pickup || ''}"`,
+                        `"${(ins.authorized_pickup || '').replace(/"/g, '""')}"`,
                         ins.form_language || '',
                         ins.created_at ? new Date(ins.created_at).toLocaleDateString('es-ES') : 'N/A'
                     ].join(',');
                 })
             ].join('\n');
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
@@ -927,65 +924,45 @@
             const activityFilter = document.getElementById('activity-filter').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
 
-            console.log('Aplicando filtros:', { courseFilter, activityFilter, searchTerm });
-            console.log('Total inscripciones:', allInscriptions.length);
-
             filteredInscriptions = allInscriptions.filter(inscription => {
-                // Check course filter
                 let matchesCourse = true;
                 if (courseFilter) {
                     if (inscription.students && Array.isArray(inscription.students)) {
-                        // New format with multiple students
-                        console.log('Verificando curso en students:', inscription.students);
-                        const studentCourses = inscription.students.map(s => s.course);
-                        console.log('Cursos encontrados:', studentCourses);
-                        matchesCourse = inscription.students.some(student => {
-                            console.log(`Comparando: "${student.course}" === "${courseFilter}"`);
-                            return student.course === courseFilter;
-                        });
-                        console.log('matchesCourse:', matchesCourse);
+                        matchesCourse = inscription.students.some(student => student.course === courseFilter);
                     } else {
-                        // Old format with single student
                         matchesCourse = inscription.student_course === courseFilter;
                     }
                 }
 
-                // Check activity filter
                 let matchesActivity = true;
                 if (activityFilter) {
                     if (inscription.students && Array.isArray(inscription.students)) {
-                        // New format with multiple students
                         matchesActivity = inscription.students.some(student => 
                             student.activities && student.activities.includes(activityFilter)
                         );
                     } else {
-                        // Old format with single student
                         matchesActivity = inscription.activities && inscription.activities.includes(activityFilter);
                     }
                 }
 
-                // Check search term
                 let matchesSearch = true;
                 if (searchTerm) {
+                    const parentName = (inscription.parent_name || '').toLowerCase();
                     if (inscription.students && Array.isArray(inscription.students)) {
-                        // New format with multiple students
-                        matchesSearch = inscription.students.some(student => 
-                            student.name.toLowerCase().includes(searchTerm) ||
-                            student.surname.toLowerCase().includes(searchTerm)
-                        ) || inscription.parent_name.toLowerCase().includes(searchTerm);
+                         matchesSearch = parentName.includes(searchTerm) || inscription.students.some(student => 
+                            (student.name || '').toLowerCase().includes(searchTerm) ||
+                            (student.surname || '').toLowerCase().includes(searchTerm)
+                        );
                     } else {
-                        // Old format with single student
-                        matchesSearch = 
+                         matchesSearch = parentName.includes(searchTerm) || 
                             (inscription.student_name && inscription.student_name.toLowerCase().includes(searchTerm)) ||
-                            (inscription.student_surname && inscription.student_surname.toLowerCase().includes(searchTerm)) ||
-                            inscription.parent_name.toLowerCase().includes(searchTerm);
+                            (inscription.student_surname && inscription.student_surname.toLowerCase().includes(searchTerm));
                     }
                 }
 
                 return matchesCourse && matchesActivity && matchesSearch;
             });
 
-            console.log('Inscripciones filtradas:', filteredInscriptions.length);
             currentPage = 1;
             renderTable();
         }
@@ -995,13 +972,12 @@
             const refreshText = document.getElementById('refresh-text');
             const refreshLoader = document.getElementById('refresh-loader');
             
-            refreshBtn.disabled = isLoading;
-            refreshText.classList.toggle('hidden', isLoading);
-            refreshLoader.classList.toggle('hidden', !isLoading);
+            if (refreshBtn) refreshBtn.disabled = isLoading;
+            if (refreshText) refreshText.classList.toggle('hidden', isLoading);
+            if (refreshLoader) refreshLoader.classList.toggle('hidden', !isLoading);
         }
 
         function showSuccess(message) {
-            // Simple success notification
             const notification = document.createElement('div');
             notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
             notification.textContent = message;
@@ -1010,7 +986,6 @@
         }
 
         function showError(message) {
-            // Simple error notification
             const notification = document.createElement('div');
             notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
             notification.textContent = message;
@@ -1030,7 +1005,7 @@
         let currentEditingInscription = null;
 
         function editInscription(id) {
-            const inscription = allInscriptions.find(ins => ins.id === id);
+            const inscription = allInscriptions.find(ins => ins.id == id); // Use == for potential type coercion
             if (!inscription) return;
 
             currentEditingInscription = inscription;
@@ -1060,11 +1035,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                                <input type="text" value="${student.name}" class="student-name border border-gray-300 rounded-md px-3 py-2 w-full" />
+                                <input type="text" value="${student.name || ''}" class="student-name border border-gray-300 rounded-md px-3 py-2 w-full" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
-                                <input type="text" value="${student.surname}" class="student-surname border border-gray-300 rounded-md px-3 py-2 w-full" />
+                                <input type="text" value="${student.surname || ''}" class="student-surname border border-gray-300 rounded-md px-3 py-2 w-full" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Curso</label>
@@ -1177,7 +1152,7 @@
             
             modal.classList.remove('hidden');
             
-            // Agregar event listeners para actualizar actividades cuando cambie el curso
+            // Add event listeners to update activities when the course changes
             setTimeout(() => {
                 const courseSelects = document.querySelectorAll('.student-course');
                 courseSelects.forEach((select, index) => {
@@ -1188,96 +1163,18 @@
             }, 100);
         }
 
-        function getAvailableActivities() {
-            const activities = new Set();
-            allInscriptions.forEach(ins => {
-                if (ins.students && Array.isArray(ins.students)) {
-                    ins.students.forEach(student => {
-                        if (student.activities && Array.isArray(student.activities)) {
-                            student.activities.forEach(activity => activities.add(activity));
-                        }
-                    });
-                } else if (ins.activities && Array.isArray(ins.activities)) {
-                    ins.activities.forEach(activity => activities.add(activity));
-                }
-            });
-            return Array.from(activities).sort();
-        }
-
         function getActivitiesByCourse(course) {
-            // Definir las actividades según el curso
             const courseActivities = {
-                'I3': [
-                    "Teatre Musical en Anglès (Dimarts)",
-                    "Marxa-Marxa en Anglès (Dijous)",
-                    "Iniciació a Timbals (Divendres)"
-                ],
-                'I4': [
-                    "Teatre Musical en Anglès (Dimarts)",
-                    "Marxa-Marxa en Anglès (Dijous)",
-                    "Iniciació a Timbals (Divendres)"
-                ],
-                'I5': [
-                    "Teatre Musical en Anglès (Dimarts)",
-                    "Marxa-Marxa en Anglès (Dijous)",
-                    "Iniciació a Timbals (Divendres)"
-                ],
-                '1PRI': [
-                    "Anglès Pur Primària (Dimecres)",
-                    "Futbol (Dimarts)",
-                    "Anglès (Dimecres)",
-                    "Patinatge (Dimecres)",
-                    "Yoga (Dimecres)",
-                    "Futbol (Dijous)",
-                    "Timbals (Divendres)"
-                ],
-                '2PRI': [
-                    "Anglès Pur Primària (Dimecres)",
-                    "Futbol (Dimarts)",
-                    "Anglès (Dimecres)",
-                    "Patinatge (Dimecres)",
-                    "Yoga (Dimecres)",
-                    "Futbol (Dijous)",
-                    "Timbals (Divendres)"
-                ],
-                '3PRI': [
-                    "Anglès Pur Primària (Dimecres)",
-                    "Futbol (Dimarts)",
-                    "Anglès (Dimecres)",
-                    "Patinatge (Dimecres)",
-                    "Yoga (Dimecres)",
-                    "Futbol (Dijous)",
-                    "Timbals (Divendres)"
-                ],
-                '4PRI': [
-                    "Anglès Pur Primària (Dimecres)",
-                    "Anglès (Dimarts)",
-                    "Futbol (Dimarts)",
-                    "Patinatge (Dimecres)",
-                    "Yoga (Dimecres)",
-                    "Futbol (Dijous)",
-                    "Timbals (Divendres)"
-                ],
-                '5PRI': [
-                    "Anglès Pur Primària (Dimecres)",
-                    "Anglès (Dimarts)",
-                    "Futbol (Dimarts)",
-                    "Patinatge (Dimecres)",
-                    "Yoga (Dimecres)",
-                    "Futbol (Dijous)",
-                    "Timbals (Divendres)"
-                ],
-                '6PRI': [
-                    "Anglès Pur Primària (Dimecres)",
-                    "Anglès (Dimarts)",
-                    "Futbol (Dimarts)",
-                    "Patinatge (Dimecres)",
-                    "Yoga (Dimecres)",
-                    "Futbol (Dijous)",
-                    "Timbals (Divendres)"
-                ]
+                'I3': ["Teatre Musical en Anglès (Dimarts)", "Marxa-Marxa en Anglès (Dijous)", "Iniciació a Timbals (Divendres)"],
+                'I4': ["Teatre Musical en Anglès (Dimarts)", "Marxa-Marxa en Anglès (Dijous)", "Iniciació a Timbals (Divendres)"],
+                'I5': ["Teatre Musical en Anglès (Dimarts)", "Marxa-Marxa en Anglès (Dijous)", "Iniciació a Timbals (Divendres)"],
+                '1PRI': ["Anglès Pur Primària (Dimecres)", "Futbol (Dimarts)", "Anglès (Dimecres)", "Patinatge (Dimecres)", "Yoga (Dimecres)", "Futbol (Dijous)", "Timbals (Divendres)"],
+                '2PRI': ["Anglès Pur Primària (Dimecres)", "Futbol (Dimarts)", "Anglès (Dimecres)", "Patinatge (Dimecres)", "Yoga (Dimecres)", "Futbol (Dijous)", "Timbals (Divendres)"],
+                '3PRI': ["Anglès Pur Primària (Dimecres)", "Futbol (Dimarts)", "Anglès (Dimecres)", "Patinatge (Dimecres)", "Yoga (Dimecres)", "Futbol (Dijous)", "Timbals (Divendres)"],
+                '4PRI': ["Anglès Pur Primària (Dimecres)", "Anglès (Dimarts)", "Futbol (Dimarts)", "Patinatge (Dimecres)", "Yoga (Dimecres)", "Futbol (Dijous)", "Timbals (Divendres)"],
+                '5PRI': ["Anglès Pur Primària (Dimecres)", "Anglès (Dimarts)", "Futbol (Dimarts)", "Patinatge (Dimecres)", "Yoga (Dimecres)", "Futbol (Dijous)", "Timbals (Divendres)"],
+                '6PRI': ["Anglès Pur Primària (Dimecres)", "Anglès (Dimarts)", "Futbol (Dimarts)", "Patinatge (Dimecres)", "Yoga (Dimecres)", "Futbol (Dijous)", "Timbals (Divendres)"]
             };
-            
             return courseActivities[course] || [];
         }
 
@@ -1308,19 +1205,13 @@
                 const toggleButton = studentElement.querySelector('button[onclick*="toggleStudentStatus"]');
                 const isCurrentlyActive = statusCheckbox.checked;
                 
-                // Ya no hay restricción para suspender el último estudiante
-                
-                // Cambiar el estado
                 statusCheckbox.checked = !isCurrentlyActive;
                 
-                // Actualizar el botón y el estilo
                 if (isCurrentlyActive) {
-                    // Suspender
                     toggleButton.textContent = 'Reactivar';
                     toggleButton.className = 'text-green-600 hover:text-green-800 text-sm font-medium';
                     studentElement.classList.add('student-suspended');
                 } else {
-                    // Reactivar
                     toggleButton.textContent = 'Suspender';
                     toggleButton.className = 'text-orange-600 hover:text-orange-800 text-sm font-medium';
                     studentElement.classList.remove('student-suspended');
@@ -1388,7 +1279,7 @@
             
             studentsContainer.insertAdjacentHTML('beforeend', newStudentHtml);
             
-            // Agregar event listener para el nuevo estudiante
+            // Add event listener for the new student
             setTimeout(() => {
                 const newSelect = document.querySelector(`[data-student-index="${newIndex}"] .student-course`);
                 if (newSelect) {
@@ -1397,17 +1288,6 @@
                     });
                 }
             }, 100);
-        }
-
-        function reindexStudents() {
-            const studentsContainer = document.getElementById('students-container');
-            const students = studentsContainer.querySelectorAll('[data-student-index]');
-            
-            students.forEach((student, index) => {
-                student.setAttribute('data-student-index', index);
-                student.querySelector('h4').textContent = `Alumno/a ${index + 1}`;
-                student.querySelector('button').setAttribute('onclick', `removeStudent(${index})`);
-            });
         }
 
         async function saveInscriptionChanges() {
@@ -1422,7 +1302,6 @@
             }
 
             const updatedStudents = [];
-            let hasActiveStudent = false;
             
             students.forEach(studentElement => {
                 const name = studentElement.querySelector('.student-name').value.trim();
@@ -1440,19 +1319,13 @@
                         activities,
                         suspended: !isActive
                     });
-                    
-                    if (isActive) {
-                        hasActiveStudent = true;
-                    }
                 }
             });
 
-            if (updatedStudents.length === 0) {
+            if (updatedStudents.length < students.length) {
                 showError('Todos los estudiantes deben tener nombre, apellidos y curso completados.');
                 return;
             }
-
-            // Ya no hay restricción para tener al menos un estudiante activo
 
             try {
                 const { error } = await supabaseClient
@@ -1462,15 +1335,14 @@
 
                 if (error) throw error;
 
-                // Actualizar datos locales
-                const index = allInscriptions.findIndex(ins => ins.id === currentEditingInscription.id);
+                // Update local data
+                const index = allInscriptions.findIndex(ins => ins.id == currentEditingInscription.id); // use ==
                 if (index !== -1) {
                     allInscriptions[index].students = updatedStudents;
-                    filteredInscriptions = [...allInscriptions];
+                    // Re-apply filters with the updated data
+                    applyFilters(); 
                 }
-
-                updateStats();
-                renderTable();
+                
                 document.getElementById('edit-modal').classList.add('hidden');
                 showSuccess('Inscripción actualizada correctamente');
             } catch (error) {
