@@ -507,7 +507,7 @@
                                 <button onclick="editInscription('${inscription.id}')" class="text-green-600 hover:text-green-900 mr-3">
                                     Editar
                                 </button>
-                                <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
+                                <button onclick="handleDeleteAction('${inscription.id}', ${studentIndex})" class="text-red-600 hover:text-red-900">
                                     Eliminar
                                 </button>
                             </td>
@@ -559,7 +559,7 @@
                                     </svg>
                                     Editar
                                 </button>
-                                <button onclick="deleteInscription('${inscription.id}')" class="bg-red-600 text-white px-3 py-2 rounded-md text-sm hover:bg-red-700 flex items-center">
+                                <button onclick="handleDeleteAction('${inscription.id}', ${studentIndex})" class="bg-red-600 text-white px-3 py-2 rounded-md text-sm hover:bg-red-700 flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -620,7 +620,7 @@
                             <button onclick="editInscription('${inscription.id}')" class="text-green-600 hover:text-green-900 mr-3">
                                 Editar
                             </button>
-                            <button onclick="deleteInscription('${inscription.id}')" class="text-red-600 hover:text-red-900">
+                            <button onclick="handleDeleteAction('${inscription.id}')" class="text-red-600 hover:text-red-900">
                                 Eliminar
                             </button>
                         </td>
@@ -672,7 +672,7 @@
                                 </svg>
                                 Editar
                             </button>
-                            <button onclick="deleteInscription('${inscription.id}')" class="bg-red-600 text-white px-3 py-2 rounded-md text-sm hover:bg-red-700 flex items-center">
+                            <button onclick="handleDeleteAction('${inscription.id}')" class="bg-red-600 text-white px-3 py-2 rounded-md text-sm hover:bg-red-700 flex items-center">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                 </svg>
@@ -819,27 +819,73 @@
             modal.classList.remove('hidden');
         }
 
-        async function deleteInscription(id) {
-            if (!confirm('¿Estás seguro de que quieres eliminar esta inscripción?')) return;
+        async function handleDeleteAction(inscriptionId, studentIndex = null) {
+            const inscription = allInscriptions.find(ins => ins.id == inscriptionId);
+            if (!inscription) {
+                showError('No se encontró la inscripción.');
+                return;
+            }
 
-            try {
-                const { error } = await supabaseClient
-                    .from('inscripcions')
-                    .delete()
-                    .eq('id', id);
+            // Case 1: Deleting a specific student from a multi-student inscription
+            if (studentIndex !== null && inscription.students && inscription.students.length > 1) {
+                const studentName = inscription.students[studentIndex].name;
+                if (!confirm(`¿Estás seguro de que quieres eliminar al alumno/a ${studentName} de esta inscripción? Los demás hermanos permanecerán inscritos.`)) {
+                    return;
+                }
 
-                if (error) throw error;
+                const updatedStudents = inscription.students.filter((_, index) => index !== studentIndex);
 
-                // Remove from local arrays
-                allInscriptions = allInscriptions.filter(ins => ins.id != id); // Use !=
-                filteredInscriptions = filteredInscriptions.filter(ins => ins.id != id); // Use !=
-                
-                updateStats();
-                renderTable();
-                showSuccess('Inscripción eliminada correctamente');
-            } catch (error) {
-                console.error('Error deleting inscription:', error);
-                showError('Error al eliminar la inscripción: ' + error.message);
+                try {
+                    const { error } = await supabaseClient
+                        .from('inscripcions')
+                        .update({ students: updatedStudents })
+                        .eq('id', inscriptionId);
+
+                    if (error) throw error;
+
+                    // Update local data
+                    const localInscriptionIndex = allInscriptions.findIndex(ins => ins.id == inscriptionId);
+                    if (localInscriptionIndex !== -1) {
+                        allInscriptions[localInscriptionIndex].students = updatedStudents;
+                    }
+                    
+                    // Re-filter and re-render
+                    applyFilters(); 
+                    updateStats();
+                    showSuccess('Alumno eliminado correctamente.');
+
+                } catch (error) {
+                    console.error('Error updating inscription to remove student:', error);
+                    showError('Error al eliminar el alumno: ' + error.message);
+                }
+
+            } 
+            // Case 2: Deleting the entire inscription (last student or old format)
+            else {
+                if (!confirm('¿Estás seguro de que quieres eliminar esta inscripción? Se eliminarán todos los alumnos asociados.')) {
+                    return;
+                }
+
+                try {
+                    const { error } = await supabaseClient
+                        .from('inscripcions')
+                        .delete()
+                        .eq('id', inscriptionId);
+
+                    if (error) throw error;
+
+                    // Remove from local arrays
+                    allInscriptions = allInscriptions.filter(ins => ins.id != inscriptionId);
+                    
+                    // Re-filter and re-render
+                    applyFilters();
+                    updateStats();
+                    showSuccess('Inscripción eliminada correctamente');
+
+                } catch (error) {
+                    console.error('Error deleting inscription:', error);
+                    showError('Error al eliminar la inscripción: ' + error.message);
+                }
             }
         }
 
@@ -1013,7 +1059,7 @@
         window.editInscription = editInscription;
         window.toggleStudentStatus = toggleStudentStatus;
         window.addNewStudent = addNewStudent;
-        window.deleteInscription = deleteInscription;
+        window.handleDeleteAction = handleDeleteAction;
         window.logout = logout;
 
         let currentEditingInscription = null;
