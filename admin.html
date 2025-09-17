@@ -57,7 +57,7 @@
                                 </svg>
                             </span>
                             <div id="refresh-loader" class="loader hidden"></div>
-                            <span id="refresh-text" class="ml-2 hidden sm:block">Actualizar</span>
+                            <span id="refresh-text" class="ml-2 hidden lg:block">Actualizar</span>
                         </button>
                         
                         <!-- Export Button -->
@@ -65,7 +65,7 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            <span class="ml-2 hidden sm:block">Exportar CSV</span>
+                            <span class="ml-2 hidden lg:block">Exportar CSV</span>
                         </button>
                         
                         <!-- Logout Button -->
@@ -73,7 +73,7 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
-                            <span class="ml-2 hidden sm:block">Cerrar Sesión</span>
+                            <span class="ml-2 hidden lg:block">Cerrar Sesión</span>
                         </button>
                     </div>
                 </div>
@@ -183,9 +183,13 @@
             <div class="bg-white rounded-lg shadow overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-gray-900">Lista de Inscripciones</h3>
+                    <p class="text-sm text-gray-500 md:hidden mt-1">
+                        👈 Desliza la tabla para ver todas las columnas
+                    </p>
                 </div>
-                <!-- Mobile responsive table wrapper -->
-                <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     <table class="min-w-full divide-y divide-gray-200" style="min-width: 800px;">
                         <thead class="bg-gray-50">
                             <tr>
@@ -202,6 +206,11 @@
                             <!-- Data will be loaded here -->
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Cards View -->
+                <div id="cards-container" class="md:hidden p-4 space-y-4 bg-gray-50">
+                    <!-- Cards will be loaded here -->
                 </div>
             </div>
 
