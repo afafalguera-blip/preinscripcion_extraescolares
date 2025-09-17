@@ -48,16 +48,32 @@
                         <h1 class="text-2xl font-bold text-gray-900">Panel de Administración</h1>
                         <p class="text-sm text-gray-600">AFA Escola Falguera - Gestión de Inscripciones</p>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <button id="refresh-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                            <span id="refresh-text">Actualizar</span>
+                    <div class="flex items-center space-x-2">
+                        <!-- Refresh Button -->
+                        <button id="refresh-btn" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center" title="Actualizar datos">
+                            <span id="refresh-icon" class="block">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </span>
                             <div id="refresh-loader" class="loader hidden"></div>
+                            <span id="refresh-text" class="ml-2 hidden sm:block">Actualizar</span>
                         </button>
-                        <button id="export-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                            Exportar CSV
+                        
+                        <!-- Export Button -->
+                        <button id="export-btn" class="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center" title="Exportar CSV">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="ml-2 hidden sm:block">Exportar CSV</span>
                         </button>
-                        <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
-                            Cerrar Sesión
+                        
+                        <!-- Logout Button -->
+                        <button onclick="logout()" class="bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center" title="Cerrar sesión">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            <span class="ml-2 hidden sm:block">Cerrar Sesión</span>
                         </button>
                     </div>
                 </div>
