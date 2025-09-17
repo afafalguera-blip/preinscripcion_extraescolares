@@ -365,13 +365,31 @@
         }
 
         function updateStats() {
-            document.getElementById('total-inscriptions').textContent = allInscriptions.length;
-            
-            const afaMembers = allInscriptions.filter(ins => ins.afa_member).length;
-            document.getElementById('afa-members').textContent = afaMembers;
-            document.getElementById('non-members').textContent = allInscriptions.length - afaMembers;
+            let totalStudents = 0;
+            let afaMemberStudents = 0;
 
-            // Most popular activity
+            allInscriptions.forEach(ins => {
+                let studentCount = 0;
+                // Check for new format with multiple students
+                if (ins.students && Array.isArray(ins.students)) {
+                    studentCount = ins.students.length;
+                } else {
+                    // Fallback to old format, count as 1 student
+                    studentCount = 1;
+                }
+
+                totalStudents += studentCount;
+
+                if (ins.afa_member) {
+                    afaMemberStudents += studentCount;
+                }
+            });
+
+            document.getElementById('total-inscriptions').textContent = totalStudents;
+            document.getElementById('afa-members').textContent = afaMemberStudents;
+            document.getElementById('non-members').textContent = totalStudents - afaMemberStudents;
+
+            // Most popular activity logic is correct as it iterates through students
             const activityCounts = {};
             allInscriptions.forEach(ins => {
                 if (ins.students && Array.isArray(ins.students)) {
@@ -1335,6 +1353,7 @@
                 const index = allInscriptions.findIndex(ins => ins.id == currentEditingInscription.id); // use ==
                 if (index !== -1) {
                     allInscriptions[index].students = updatedStudents;
+                    updateStats(); // Recalculate stats after changing student count
                     // Re-apply filters with the updated data
                     applyFilters(); 
                 }
