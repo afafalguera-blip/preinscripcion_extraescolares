@@ -95,6 +95,13 @@
         <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg mb-8 text-center">
             <p class="font-semibold" data-lang="important_info_title">Informació important:</p>
             <p class="text-sm" data-lang="important_info_body">Les activitats ofertes només es duran a terme si hi ha un nombre suficient d'alumnes. En cas que el nombre d'inscrits superi l'aforament màxim, es tindrà en compte l'ordre d'inscripció.</p>
+            
+            <!-- Activities Overview Button -->
+            <div class="mt-4">
+                <button type="button" id="activities-overview-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium" data-lang="activities_overview_btn">
+                    ❓ Quines activitats extraescolars oferim?
+                </button>
+            </div>
         </div>
 
         <!-- Main Form -->
@@ -465,6 +472,7 @@
                 main_subheader: "Formulari de Preinscripció per a Activitats Extraescolars 2025-26",
                 important_info_title: "Informació important:",
                 important_info_body: "Les activitats ofertes només es duran a terme si hi ha un nombre suficient d'alumnes. En cas que el nombre d'inscrits superi l'aforament màxim, es tindrà en compte l'ordre d'inscripció.",
+                activities_overview_btn: "❓ Quines activitats extraescolars oferim?",
                 pricing_legend: "Preus i Mètode de Pagament",
                 pricing_general_title: "Activitats Generals",
                 pricing_general_hours: "16:30h a 18:00h",
@@ -533,6 +541,55 @@
                 status_error_generic: "Error en enviar el formulari: {error}. Si us plau, intenta-ho de nou més tard.",
                 image_auth_modal_title: "Informació sobre Drets d'Imatge",
                 image_auth_modal_content: `<p>En compliment de la Llei Orgànica 1/1982, del 5 de maig, sobre el dret a l’honor, a la intimitat personal i familiar i a la pròpia imatge demanem autorització als pares o tutors legals dels menors d’edat per a l’ús de la imatge obtinguda amb fotografies i/o vídeos realitzats per la nostra entitat amb la finalitat d’exposar-les a la nostra web, al facebook i instagram.</p><p>Sol·licitem el consentiment i autorització a l’AFA Escola Falguera, a fer ús de la imatges obtingudes durant la seva participació en les activitats extraescolars, publicades a la pagina web o xarxes socials.</p><p>A partir de la signatura d’aquest formulari vostè autoritza expressament el tractament de les seves dades de caràcter personal, per a la finalitat especificada, per part de l'AFA Escola Falguera.</p>`,
+                activities_overview_modal_title: "Activitats Extraescolars per Cursos",
+                activities_overview_modal_content: `<div class="space-y-6">
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <h4 class="font-bold text-purple-800 mb-3 flex items-center">
+                            <span class="text-2xl mr-2">🎭</span>
+                            INFANTIL (I3, I4, I5)
+                        </h4>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>🎪 Teatre Musical en Anglès</strong> - Dimarts 16:30-18:00h</p>
+                            <p><strong>🏃‍♀️ Marxa-Marxa en Anglès</strong> - Dijous 16:30-18:00h</p>
+                            <p><strong>🥁 Iniciació a Timbals</strong> - Divendres 17:30-19:00h</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-bold text-blue-800 mb-3 flex items-center">
+                            <span class="text-2xl mr-2">⚽</span>
+                            PRIMER CICLE PRIMÀRIA (1r, 2n, 3r)
+                        </h4>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>🏈 Futbol</strong> - Dimarts i Dijous 16:30-18:00h</p>
+                            <p><strong>🗣️ Anglès</strong> - Dimecres 16:30-18:00h <span class="text-red-600 text-xs">*No es paga per AFA</span></p>
+                            <p><strong>⛸️ Patinatge</strong> - Dimecres 16:30-18:00h</p>
+                            <p><strong>🥁 Timbals</strong> - Divendres 17:30-19:00h</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 class="font-bold text-green-800 mb-3 flex items-center">
+                            <span class="text-2xl mr-2">🏆</span>
+                            SEGON CICLE PRIMÀRIA (4t, 5è, 6è)
+                        </h4>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>🗣️ Anglès</strong> - Dimarts 16:30-18:00h <span class="text-red-600 text-xs">*No es paga per AFA</span></p>
+                            <p><strong>⚽ Futbol</strong> - Dimarts i Dijous 16:30-18:00h</p>
+                            <p><strong>⛸️ Patinatge</strong> - Dimecres 16:30-18:00h</p>
+                            <p><strong>🥁 Timbals</strong> - Divendres 17:30-19:00h</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 class="font-bold text-yellow-800 mb-2">💰 Preus</h4>
+                        <div class="text-sm space-y-1">
+                            <p><strong>Activitats generals:</strong> 20€ socis / 25€ no socis</p>
+                            <p><strong>Timbals:</strong> 14€ socis / 18€ no socis</p>
+                            <p><strong>Anglès:</strong> 39€ socis / 44€ no socis (+ 60€ material)</p>
+                        </div>
+                    </div>
+                </div>`,
                 conditions_modal_title: "Condicions de les Extraescolars i Acollida",
                 conditions_modal_content: `<div class="space-y-3">
                     <h4 class="font-bold text-base">Preus i Pagament</h4>
@@ -566,6 +623,7 @@
                 main_subheader: "Formulario de Preinscripción para Actividades Extraescolares 2025-26",
                 important_info_title: "Información importante:",
                 important_info_body: "Las actividades ofrecidas solo se llevarán a cabo si hay un número suficiente de alumnos. En caso de que el número de inscritos supere el aforo máximo, se tendrá en cuenta el orden de inscripción.",
+                activities_overview_btn: "❓ ¿Qué actividades extraescolares ofrecemos?",
                 pricing_legend: "Precios y Método de Pago",
                 pricing_general_title: "Actividades Generales",
                 pricing_general_hours: "16:30h a 18:00h",
@@ -630,6 +688,55 @@
                 status_error_supabase_credentials: "Error de configuración. Contacta con el administrador.",
                 status_error_activity_required: "Debes seleccionar al menos una actividad extraescolar.",
                 status_error_generic: "Error al enviar el formulario: {error}. Por favor, inténtalo de nuevo más tarde.",
+                activities_overview_modal_title: "Actividades Extraescolares por Cursos",
+                activities_overview_modal_content: `<div class="space-y-6">
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <h4 class="font-bold text-purple-800 mb-3 flex items-center">
+                            <span class="text-2xl mr-2">🎭</span>
+                            INFANTIL (I3, I4, I5)
+                        </h4>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>🎪 Teatro Musical en Inglés</strong> - Martes 16:30-18:00h</p>
+                            <p><strong>🏃‍♀️ Marcha-Marcha en Inglés</strong> - Jueves 16:30-18:00h</p>
+                            <p><strong>🥁 Iniciación a Timbales</strong> - Viernes 17:30-19:00h</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-bold text-blue-800 mb-3 flex items-center">
+                            <span class="text-2xl mr-2">⚽</span>
+                            PRIMER CICLO PRIMARIA (1º, 2º, 3º)
+                        </h4>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>🏈 Fútbol</strong> - Martes y Jueves 16:30-18:00h</p>
+                            <p><strong>🗣️ Inglés</strong> - Miércoles 16:30-18:00h <span class="text-red-600 text-xs">*No se paga por AFA</span></p>
+                            <p><strong>⛸️ Patinaje</strong> - Miércoles 16:30-18:00h</p>
+                            <p><strong>🥁 Timbales</strong> - Viernes 17:30-19:00h</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 class="font-bold text-green-800 mb-3 flex items-center">
+                            <span class="text-2xl mr-2">🏆</span>
+                            SEGUNDO CICLO PRIMARIA (4º, 5º, 6º)
+                        </h4>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>🗣️ Inglés</strong> - Martes 16:30-18:00h <span class="text-red-600 text-xs">*No se paga por AFA</span></p>
+                            <p><strong>⚽ Fútbol</strong> - Martes y Jueves 16:30-18:00h</p>
+                            <p><strong>⛸️ Patinaje</strong> - Miércoles 16:30-18:00h</p>
+                            <p><strong>🥁 Timbales</strong> - Viernes 17:30-19:00h</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 class="font-bold text-yellow-800 mb-2">💰 Precios</h4>
+                        <div class="text-sm space-y-1">
+                            <p><strong>Actividades generales:</strong> 20€ socios / 25€ no socios</p>
+                            <p><strong>Timbales:</strong> 14€ socios / 18€ no socios</p>
+                            <p><strong>Inglés:</strong> 39€ socios / 44€ no socios (+ 60€ material)</p>
+                        </div>
+                    </div>
+                </div>`,
                 image_auth_modal_title: "Información sobre Derechos de Imagen",
                 image_auth_modal_content: `<p>En cumplimiento de la Ley Orgánica 1/1982, de 5 de mayo, sobre el derecho al honor, a la intimidad personal y familiar y a la propia imagen, pedimos autorización a los padres o tutores legales de los menores de edad para el uso de la imagen obtenida con fotografías y/o vídeos realizados por nuestra entidad con la finalidad de exponerlas en nuestra web, en facebook e instagram.</p><p>Solicitamos el consentimiento y autorización a la AFA Escola Falguera, a hacer uso de las imágenes obtenidas durante su participación en las actividades extraescolares, publicadas en la página web o redes sociales.</p><p>A partir de la firma de este formulario usted autoriza expresamente el tratamiento de sus datos de carácter personal, para la finalidad especificada, por parte de la AFA Escola Falguera.</p>`,
                 conditions_modal_title: "Condiciones de las Extraescolares y Acogida",
@@ -686,6 +793,7 @@
 
         document.getElementById('image-info-btn').addEventListener('click', () => openModal('image_auth_modal_title', 'image_auth_modal_content'));
         document.getElementById('conditions-btn').addEventListener('click', () => openModal('conditions_modal_title', 'conditions_modal_content'));
+        document.getElementById('activities-overview-btn').addEventListener('click', () => openModal('activities_overview_modal_title', 'activities_overview_modal_content'));
         modalCloseBtn.addEventListener('click', closeModal);
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
         
