@@ -8,39 +8,6 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <script>
-        // Verificar autenticación INMEDIATAMENTE al cargar la página
-        function checkAuthentication() {
-            const isAuthenticated = sessionStorage.getItem('admin_authenticated');
-            const loginTime = sessionStorage.getItem('admin_login_time');
-            const userId = sessionStorage.getItem('admin_user_id');
-            
-            if (isAuthenticated !== 'true' || !loginTime || !userId) {
-                window.location.href = 'admin_login.html';
-                return false;
-            }
-            
-            // Verificar si la sesión ha expirado (24 horas)
-            const loginTimestamp = parseInt(loginTime);
-            const currentTimestamp = Date.now();
-            const sessionDuration = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
-            
-            if (currentTimestamp - loginTimestamp > sessionDuration) {
-                sessionStorage.removeItem('admin_authenticated');
-                sessionStorage.removeItem('admin_login_time');
-                sessionStorage.removeItem('admin_user_id');
-                window.location.href = 'admin_login.html';
-                return false;
-            }
-            
-            return true;
-        }
-
-        if (!checkAuthentication()) {
-            document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen bg-gray-100"><div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p class="text-gray-600">Redirigiendo al login...</p></div></div>';
-            throw new Error('Not authorized');
-        }
-    </script>
     
     <!-- Header -->
     <header class="bg-white shadow-sm border-b">
@@ -59,6 +26,9 @@
                     </button>
                     <button onclick="recordPayment()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
                         Registrar Pago
+                    </button>
+                    <button onclick="generateMonthlyPayments()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                        Generar Pagos
                     </button>
                     <a href="admin.html" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -265,8 +235,43 @@
         let allPayments = [];
         let filteredPayments = [];
 
+        // Verificar autenticación
+        function checkAuthentication() {
+            const isAuthenticated = sessionStorage.getItem('admin_authenticated');
+            const loginTime = sessionStorage.getItem('admin_login_time');
+            const userId = sessionStorage.getItem('admin_user_id');
+            
+            console.log('Auth check:', { isAuthenticated, loginTime, userId });
+            
+            if (isAuthenticated !== 'true' || !loginTime || !userId) {
+                console.log('No auth data found, redirecting to login');
+                window.location.href = 'admin_login.html';
+                return false;
+            }
+            
+            // Verificar si la sesión ha expirado (24 horas)
+            const loginTimestamp = parseInt(loginTime);
+            const currentTimestamp = Date.now();
+            const sessionDuration = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
+            
+            if (currentTimestamp - loginTimestamp > sessionDuration) {
+                console.log('Session expired, redirecting to login');
+                sessionStorage.removeItem('admin_authenticated');
+                sessionStorage.removeItem('admin_login_time');
+                sessionStorage.removeItem('admin_user_id');
+                window.location.href = 'admin_login.html';
+                return false;
+            }
+            
+            console.log('Authentication successful');
+            return true;
+        }
+
         // Load data on page load
         document.addEventListener('DOMContentLoaded', () => {
+            if (!checkAuthentication()) {
+                return;
+            }
             loadPayments();
             setupEventListeners();
         });
@@ -331,10 +336,13 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         ${payment.status === 'pending' ? 
                             `<button onclick="markAsPaid('${payment.id}')" class="text-green-600 hover:text-green-900 mr-3">Marcar como Pagado</button>` : 
-                            ''
+                            `<button onclick="markAsUnpaid('${payment.id}')" class="text-orange-600 hover:text-orange-900 mr-3">Desmarcar Pago</button>`
                         }
-                        <button onclick="viewPaymentDetails('${payment.id}')" class="text-blue-600 hover:text-blue-900">
+                        <button onclick="viewPaymentDetails('${payment.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
                             Ver Detalles
+                        </button>
+                        <button onclick="viewStudentHistory('${payment.student_name}', '${payment.student_surname}')" class="text-purple-600 hover:text-purple-900">
+                            Historial
                         </button>
                     </td>
                 </tr>
@@ -404,7 +412,11 @@
                 try {
                     const { error } = await supabaseClient
                         .from('payments')
-                        .update({ status: 'paid', updated_at: new Date().toISOString() })
+                        .update({ 
+                            status: 'paid', 
+                            payment_date: new Date().toISOString().split('T')[0],
+                            updated_at: new Date().toISOString() 
+                        })
                         .eq('id', paymentId);
 
                     if (error) throw error;
@@ -414,6 +426,29 @@
                 } catch (error) {
                     console.error('Error updating payment:', error);
                     showError('Error al actualizar el pago');
+                }
+            }
+        }
+
+        async function markAsUnpaid(paymentId) {
+            if (confirm('¿Desmarcar este pago? Esto lo volverá a estado pendiente.')) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('payments')
+                        .update({ 
+                            status: 'pending', 
+                            payment_date: null,
+                            updated_at: new Date().toISOString() 
+                        })
+                        .eq('id', paymentId);
+
+                    if (error) throw error;
+
+                    loadPayments();
+                    showSuccess('Pago desmarcado correctamente');
+                } catch (error) {
+                    console.error('Error updating payment:', error);
+                    showError('Error al desmarcar el pago');
                 }
             }
         }
@@ -499,6 +534,106 @@
         function showError(message) {
             // Implementar notificación de error
             alert('Error: ' + message);
+        }
+
+        function viewPaymentDetails(paymentId) {
+            const payment = allPayments.find(p => p.id === paymentId);
+            if (!payment) {
+                showError('Pago no encontrado');
+                return;
+            }
+
+            const details = `
+                <strong>Estudiante:</strong> ${payment.student_name} ${payment.student_surname}<br>
+                <strong>Curso:</strong> ${payment.course}<br>
+                <strong>Actividades:</strong> ${payment.activities.join(', ')}<br>
+                <strong>Monto:</strong> €${payment.amount}<br>
+                <strong>Fecha de Vencimiento:</strong> ${new Date(payment.due_date).toLocaleDateString('es-ES')}<br>
+                <strong>Estado:</strong> ${getStatusText(payment.status)}<br>
+                <strong>Fecha de Pago:</strong> ${payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('es-ES') : 'No pagado'}<br>
+                <strong>Referencia Bancaria:</strong> ${payment.bank_reference || 'No especificada'}<br>
+                <strong>Notas:</strong> ${payment.notes || 'Sin notas'}<br>
+                <strong>Miembro AFA:</strong> ${payment.afa_member ? 'Sí' : 'No'}<br>
+                <strong>Mes/Año:</strong> ${payment.payment_month}/${payment.payment_year}
+            `;
+
+            alert(`DETALLES DEL PAGO\n\n${details}`);
+        }
+
+        async function generateMonthlyPayments() {
+            const month = prompt('¿Para qué mes quieres generar los pagos? (1-12):');
+            const year = prompt('¿Para qué año? (ej: 2025):');
+            
+            if (!month || !year || month < 1 || month > 12) {
+                showError('Por favor, introduce un mes válido (1-12) y año');
+                return;
+            }
+            
+            if (confirm(`¿Generar pagos para ${month}/${year}? Esto creará pagos para todos los estudiantes inscritos.`)) {
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/generate_monthly_payments`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        },
+                        body: JSON.stringify({
+                            p_month: parseInt(month),
+                            p_year: parseInt(year)
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result[0].success) {
+                        showSuccess(`Pagos generados exitosamente: ${result[0].payments_generated} pagos creados`);
+                        loadPayments();
+                    } else {
+                        showError(result[0].message);
+                    }
+                } catch (error) {
+                    console.error('Error generating payments:', error);
+                    showError('Error al generar los pagos: ' + error.message);
+                }
+            }
+        }
+
+        async function viewStudentHistory(studentName, studentSurname) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('payments')
+                    .select('*')
+                    .eq('student_name', studentName)
+                    .eq('student_surname', studentSurname)
+                    .order('payment_year', { ascending: false })
+                    .order('payment_month', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    showError('No se encontró historial para este estudiante');
+                    return;
+                }
+
+                let history = `HISTORIAL DE PAGOS\n${studentName} ${studentSurname}\n\n`;
+                
+                data.forEach(payment => {
+                    const status = getStatusText(payment.status);
+                    const dueDate = new Date(payment.due_date).toLocaleDateString('es-ES');
+                    const payDate = payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('es-ES') : 'No pagado';
+                    
+                    history += `${payment.payment_month}/${payment.payment_year}: €${payment.amount} - ${status}\n`;
+                    history += `  Vencimiento: ${dueDate}\n`;
+                    history += `  Pago: ${payDate}\n`;
+                    history += `  Actividades: ${payment.activities.join(', ')}\n\n`;
+                });
+
+                alert(history);
+            } catch (error) {
+                console.error('Error loading student history:', error);
+                showError('Error al cargar el historial del estudiante');
+            }
         }
 
         function logout() {
