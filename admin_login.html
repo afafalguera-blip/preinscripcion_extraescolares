@@ -150,6 +150,7 @@
                     
                     // Redirect to intended page or admin panel
                     const redirectPage = sessionStorage.getItem('redirect_after_login');
+                    console.log('Login successful, redirect page:', redirectPage);
                     if (redirectPage) {
                         sessionStorage.removeItem('redirect_after_login');
                         window.location.href = redirectPage;
@@ -224,12 +225,20 @@
                 const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
                 
                 if (hoursDiff < 24) {
-                    // Still authenticated, redirect to admin
-                    window.location.href = 'admin.html';
+                    // Still authenticated, redirect to intended page or admin
+                    const redirectPage = sessionStorage.getItem('redirect_after_login');
+                    console.log('Already authenticated, redirect page:', redirectPage);
+                    if (redirectPage) {
+                        sessionStorage.removeItem('redirect_after_login');
+                        window.location.href = redirectPage;
+                    } else {
+                        window.location.href = 'admin.html';
+                    }
                 } else {
                     // Session expired, clear storage
                     sessionStorage.removeItem('admin_authenticated');
                     sessionStorage.removeItem('admin_user');
+                    sessionStorage.removeItem('admin_user_id');
                     sessionStorage.removeItem('admin_login_time');
                 }
             }
