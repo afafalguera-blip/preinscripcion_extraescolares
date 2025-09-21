@@ -241,10 +241,15 @@
             const loginTime = sessionStorage.getItem('admin_login_time');
             const userId = sessionStorage.getItem('admin_user_id');
             
-            console.log('Auth check:', { isAuthenticated, loginTime, userId });
+            console.log('Payment admin - Auth check:', { 
+                isAuthenticated, 
+                loginTime, 
+                userId,
+                allKeys: Object.keys(sessionStorage)
+            });
             
             if (isAuthenticated !== 'true' || !loginTime || !userId) {
-                console.log('No auth data found, redirecting to login');
+                console.log('Payment admin - No auth data found, redirecting to login');
                 // Guardar la página de destino para redirigir después del login
                 sessionStorage.setItem('redirect_after_login', 'payment_admin.html');
                 window.location.href = 'admin_login.html';
