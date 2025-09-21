@@ -143,13 +143,21 @@
                 
                 if (authResult.success) {
                     // Store authentication in sessionStorage
+                    const userId = authResult.user_id || username; // Usar username como fallback si user_id es null
+                    console.log('Storing auth data:', { 
+                        authenticated: 'true', 
+                        user: username, 
+                        userId: userId 
+                    });
+                    
                     sessionStorage.setItem('admin_authenticated', 'true');
                     sessionStorage.setItem('admin_user', username);
-                    sessionStorage.setItem('admin_user_id', authResult.user_id);
+                    sessionStorage.setItem('admin_user_id', userId);
                     sessionStorage.setItem('admin_login_time', new Date().toISOString());
                     
                     // Redirect to intended page or admin panel
                     const redirectPage = sessionStorage.getItem('redirect_after_login');
+                    console.log('Redirect page:', redirectPage);
                     if (redirectPage) {
                         sessionStorage.removeItem('redirect_after_login');
                         window.location.href = redirectPage;
