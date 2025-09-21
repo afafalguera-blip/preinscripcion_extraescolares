@@ -148,8 +148,14 @@
                     sessionStorage.setItem('admin_user_id', authResult.user_id);
                     sessionStorage.setItem('admin_login_time', new Date().toISOString());
                     
-                    // Redirect to admin panel
-                    window.location.href = 'admin.html';
+                    // Redirect to intended page or admin panel
+                    const redirectPage = sessionStorage.getItem('redirect_after_login');
+                    if (redirectPage) {
+                        sessionStorage.removeItem('redirect_after_login');
+                        window.location.href = redirectPage;
+                    } else {
+                        window.location.href = 'admin.html';
+                    }
                 } else {
                     showError(authResult.message || 'Usuario o contraseña incorrectos');
                     setLoading(false);
@@ -218,8 +224,14 @@
                 const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
                 
                 if (hoursDiff < 24) {
-                    // Still authenticated, redirect to admin
-                    window.location.href = 'admin.html';
+                    // Still authenticated, redirect to intended page or admin
+                    const redirectPage = sessionStorage.getItem('redirect_after_login');
+                    if (redirectPage) {
+                        sessionStorage.removeItem('redirect_after_login');
+                        window.location.href = redirectPage;
+                    } else {
+                        window.location.href = 'admin.html';
+                    }
                 } else {
                     // Session expired, clear storage
                     sessionStorage.removeItem('admin_authenticated');
