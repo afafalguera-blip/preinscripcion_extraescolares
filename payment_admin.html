@@ -8,6 +8,40 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
+    <script>
+        // Verificar autenticación INMEDIATAMENTE al cargar la página
+        function checkAuthentication() {
+            const isAuthenticated = sessionStorage.getItem('admin_authenticated');
+            const loginTime = sessionStorage.getItem('admin_login_time');
+            const userId = sessionStorage.getItem('admin_user_id');
+            
+            if (isAuthenticated !== 'true' || !loginTime || !userId) {
+                window.location.href = 'admin_login.html';
+                return false;
+            }
+            
+            // Verificar si la sesión ha expirado (24 horas)
+            const loginTimestamp = parseInt(loginTime);
+            const currentTimestamp = Date.now();
+            const sessionDuration = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
+            
+            if (currentTimestamp - loginTimestamp > sessionDuration) {
+                sessionStorage.removeItem('admin_authenticated');
+                sessionStorage.removeItem('admin_login_time');
+                sessionStorage.removeItem('admin_user_id');
+                window.location.href = 'admin_login.html';
+                return false;
+            }
+            
+            return true;
+        }
+
+        if (!checkAuthentication()) {
+            document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen bg-gray-100"><div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p class="text-gray-600">Redirigiendo al login...</p></div></div>';
+            throw new Error('Not authorized');
+        }
+    </script>
+    
     <!-- Header -->
     <header class="bg-white shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -231,38 +265,11 @@
         let allPayments = [];
         let filteredPayments = [];
 
-        // Verificar autenticación al cargar la página
-        function checkAuthentication() {
-            const isAuthenticated = sessionStorage.getItem('admin_authenticated');
-            const loginTime = sessionStorage.getItem('admin_login_time');
-            const userId = sessionStorage.getItem('admin_user_id');
-            
-            if (isAuthenticated !== 'true' || !loginTime || !userId) {
-                window.location.href = 'admin_login.html';
-                return false;
-            }
-            
-            // Verificar si la sesión ha expirado (24 horas)
-            const loginTimestamp = parseInt(loginTime);
-            const currentTimestamp = Date.now();
-            const sessionDuration = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
-            
-            if (currentTimestamp - loginTimestamp > sessionDuration) {
-                sessionStorage.removeItem('admin_authenticated');
-                sessionStorage.removeItem('admin_login_time');
-                sessionStorage.removeItem('admin_user_id');
-                window.location.href = 'admin_login.html';
-                return false;
-            }
-            
-            return true;
-        }
-
-        // Verificar autenticación inmediatamente
-        if (!checkAuthentication()) {
-            document.body.innerHTML = '<div class="flex items-center justify-center min-h-screen bg-gray-100"><div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p class="text-gray-600">Redirigiendo al login...</p></div></div>';
-            throw new Error('Not authorized');
-        }
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPayments();
+            setupEventListeners();
+        });
 
         // Initialize Supabase client
         try {
@@ -271,11 +278,6 @@
             console.error("Error initializing Supabase client:", error);
         }
 
-        // Load data on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            loadPayments();
-            setupEventListeners();
-        });
 
         async function loadPayments() {
             try {
@@ -497,6 +499,16 @@
         function showError(message) {
             // Implementar notificación de error
             alert('Error: ' + message);
+        }
+
+        function logout() {
+            // Limpiar datos de sesión
+            sessionStorage.removeItem('admin_authenticated');
+            sessionStorage.removeItem('admin_login_time');
+            sessionStorage.removeItem('admin_user_id');
+            
+            // Redirigir al login
+            window.location.href = 'admin_login.html';
         }
     </script>
 
