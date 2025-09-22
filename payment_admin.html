@@ -292,8 +292,23 @@
                     .order('payment_date', { ascending: false });
 
                 if (error) throw error;
+                
+                // Filtrar pagos futuros
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = now.getMonth() + 1; // getMonth() es 0-11, lo pasamos a 1-12
 
-                allPayments = data || [];
+                const relevantPayments = (data || []).filter(payment => {
+                    const isPaid = payment.status === 'paid';
+                    // Comprueba si el pago es de un año anterior, o del mismo año pero de un mes igual o anterior.
+                    const isCurrentOrPastDue = (payment.payment_year < currentYear) || 
+                                               (payment.payment_year === currentYear && payment.payment_month <= currentMonth);
+                    
+                    // Un pago es relevante si ya está pagado (historial) o si su vencimiento es de este mes o anterior.
+                    return isPaid || isCurrentOrPastDue;
+                });
+
+                allPayments = relevantPayments; // Usamos los datos ya filtrados
                 filteredPayments = [...allPayments];
                 renderPayments();
                 updateStats();
@@ -326,7 +341,7 @@
                         <div class="text-sm font-medium text-gray-900">€${payment.amount}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">${new Date(payment.payment_date).toLocaleDateString('es-ES')}</div>
+                        <div class="text-sm text-gray-900">${payment.due_date ? new Date(payment.due_date).toLocaleDateString('es-ES') : 'N/A'}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="status-badge ${getStatusClass(payment.status)}">
@@ -616,24 +631,43 @@
                     return;
                 }
 
-                let history = `HISTORIAL DE PAGOS\n${studentName} ${studentSurname}\n\n`;
-                
-                data.forEach(payment => {
-                    const status = getStatusText(payment.status);
-                    const dueDate = new Date(payment.due_date).toLocaleDateString('es-ES');
-                    const payDate = payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('es-ES') : 'No pagado';
-                    
-                    history += `${payment.payment_month}/${payment.payment_year}: €${payment.amount} - ${status}\n`;
-                    history += `  Vencimiento: ${dueDate}\n`;
-                    history += `  Pago: ${payDate}\n`;
-                    history += `  Actividades: ${payment.activities.join(', ')}\n\n`;
-                });
+                const modal = document.getElementById('history-modal');
+                const title = document.getElementById('history-modal-title');
+                const content = document.getElementById('history-modal-content');
 
-                alert(history);
+                title.innerText = `Historial de: ${studentName} ${studentSurname}`;
+                
+                content.innerHTML = data.map(payment => {
+                    const statusClass = getStatusClass(payment.status);
+                    const statusText = getStatusText(payment.status);
+                    const dueDate = payment.due_date ? new Date(payment.due_date).toLocaleDateString('es-ES') : 'N/A';
+                    const payDate = payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('es-ES') : '---';
+
+                    return `
+                        <div class="p-3 bg-gray-50 rounded-lg border">
+                            <div class="flex justify-between items-center">
+                                <p class="font-bold text-gray-800">${payment.payment_month}/${payment.payment_year}: €${payment.amount}</p>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mt-2">
+                                <p><strong>Vencimiento:</strong> ${dueDate}</p>
+                                <p><strong>Pagado el:</strong> ${payDate}</p>
+                                <p><strong>Actividades:</strong> ${payment.activities.join(', ')}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                modal.classList.remove('hidden');
+
             } catch (error) {
                 console.error('Error loading student history:', error);
                 showError('Error al cargar el historial del estudiante');
             }
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('history-modal').classList.add('hidden');
         }
 
         function logout() {
@@ -646,6 +680,24 @@
             window.location.href = 'admin_login.html';
         }
     </script>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 id="history-modal-title" class="text-lg font-medium text-gray-900">Historial de Pagos</h3>
+                    <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="history-modal-content" class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                </div>
+            </div>
+        </div>
+    </div>
 
     <style>
         .status-badge {
