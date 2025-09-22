@@ -248,22 +248,22 @@
                 return false;
             }
             
-            // Verificar si la sesión ha expirado (24 horas)
-            const loginTimestamp = parseInt(loginTime);
-            const currentTimestamp = Date.now();
-            const sessionDuration = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
+            // Comprobación de expiración de sesión (24 horas)
+            const loginDate = new Date(loginTime);
+            const now = new Date();
+            const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
             
-            if (currentTimestamp - loginTimestamp > sessionDuration) {
-                console.log('Session expired, redirecting to login');
+            if (hoursDiff >= 24) {
+                // Sesión expirada
                 sessionStorage.removeItem('admin_authenticated');
-                sessionStorage.removeItem('admin_login_time');
+                sessionStorage.removeItem('admin_user');
                 sessionStorage.removeItem('admin_user_id');
+                sessionStorage.removeItem('admin_login_time');
                 sessionStorage.setItem('redirect_after_login', 'payment_admin.html');
                 window.location.href = 'admin_login.html';
                 return false;
             }
             
-            console.log('Authentication successful');
             return true;
         }
 
