@@ -30,6 +30,9 @@
                     <button onclick="generateMonthlyPayments()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
                         Generar Pagos
                     </button>
+                    <button onclick="deleteMonthlyPayments()" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
+                        Eliminar Mes
+                    </button>
                     <a href="admin.html" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -384,6 +387,9 @@
                         <button onclick="viewStudentHistory('${payment.student_name}', '${payment.student_surname}')" class="text-purple-600 hover:text-purple-900">
                             Historial
                         </button>
+                        <button onclick="deletePayment('${payment.id}')" class="text-red-600 hover:text-red-900 ml-3">
+                            Eliminar
+                        </button>
                     </td>
                 </tr>
             `).join('');
@@ -490,6 +496,85 @@
                     console.error('Error updating payment:', error);
                     showError('Error al desmarcar el pago');
                 }
+            }
+        }
+
+        async function deletePayment(paymentId) {
+            if (!confirm('¿Eliminar este pago y su histórico? Esta acción no se puede deshacer.')) return;
+            try {
+                // Borrar histórico primero
+                const { error: histError } = await supabaseClient
+                    .from('payment_history')
+                    .delete()
+                    .eq('payment_id', paymentId);
+                if (histError) throw histError;
+
+                // Borrar el pago
+                const { error: payError } = await supabaseClient
+                    .from('payments')
+                    .delete()
+                    .eq('id', paymentId);
+                if (payError) throw payError;
+
+                showSuccess('Pago eliminado');
+                loadPayments();
+            } catch (e) {
+                console.error('Error deleting payment:', e);
+                showError('Error al eliminar el pago');
+            }
+        }
+
+        async function deleteMonthlyPayments() {
+            const month = prompt('¿Qué mes quieres eliminar? (1-12)');
+            const year = prompt('¿Qué año? (ej: 2025)');
+            const m = parseInt(month, 10);
+            const y = parseInt(year, 10);
+            if (!m || !y || m < 1 || m > 12) {
+                showError('Mes/año inválidos');
+                return;
+            }
+            if (!confirm(`¿Eliminar TODOS los pagos de ${m}/${y}? Se eliminará también su histórico y el registro de generación.`)) return;
+            try {
+                // Obtener IDs de pagos del mes/año
+                const { data: ids, error: idsError } = await supabaseClient
+                    .from('payments')
+                    .select('id')
+                    .eq('payment_year', y)
+                    .eq('payment_month', m);
+                if (idsError) throw idsError;
+
+                const paymentIds = (ids || []).map(r => r.id);
+
+                // Borrar histórico si hay ids
+                if (paymentIds.length > 0) {
+                    const { error: histError } = await supabaseClient
+                        .from('payment_history')
+                        .delete()
+                        .in('payment_id', paymentIds);
+                    if (histError) throw histError;
+                }
+
+                // Borrar pagos del mes/año
+                const { error: payError } = await supabaseClient
+                    .from('payments')
+                    .delete()
+                    .eq('payment_year', y)
+                    .eq('payment_month', m);
+                if (payError) throw payError;
+
+                // Borrar registro de generación del mes/año
+                const { error: genError } = await supabaseClient
+                    .from('monthly_payment_generation')
+                    .delete()
+                    .eq('year', y)
+                    .eq('month', m);
+                if (genError) throw genError;
+
+                showSuccess(`Pagos de ${m}/${y} eliminados`);
+                loadPayments();
+            } catch (e) {
+                console.error('Error deleting monthly payments:', e);
+                showError('Error al eliminar los pagos del mes');
             }
         }
 
