@@ -213,8 +213,19 @@
             }
         }
 
-        // Check if already authenticated
+        // Check if already authenticated and handle redirects
         document.addEventListener('DOMContentLoaded', () => {
+            // --- CORRECCIÓN AÑADIDA ---
+            // Revisa si hay un parámetro 'redirect' en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectTarget = urlParams.get('redirect');
+
+            if (redirectTarget) {
+                // Si existe, lo guarda en sessionStorage para usarlo después del login
+                sessionStorage.setItem('redirect_after_login', redirectTarget);
+            }
+            // --- FIN DE LA CORRECCIÓN ---
+
             const isAuthenticated = sessionStorage.getItem('admin_authenticated');
             const loginTime = sessionStorage.getItem('admin_login_time');
             
