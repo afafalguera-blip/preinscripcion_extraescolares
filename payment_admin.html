@@ -320,23 +320,9 @@
                     .order('payment_date', { ascending: false });
 
                 if (error) throw error;
-                
-                // Filtrar pagos futuros
-                const now = new Date();
-                const currentYear = now.getFullYear();
-                const currentMonth = now.getMonth() + 1; // getMonth() es 0-11, lo pasamos a 1-12
 
-                const relevantPayments = (data || []).filter(payment => {
-                    const isPaid = payment.status === 'paid';
-                    // Comprueba si el pago es de un año anterior, o del mismo año pero de un mes igual o anterior.
-                    const isCurrentOrPastDue = (payment.payment_year < currentYear) || 
-                                               (payment.payment_year === currentYear && payment.payment_month <= currentMonth);
-                    
-                    // Un pago es relevante si ya está pagado (historial) o si su vencimiento es de este mes o anterior.
-                    return isPaid || isCurrentOrPastDue;
-                });
-
-                allPayments = relevantPayments; // Usamos los datos ya filtrados
+                // Mostrar todos los pagos (incluidos futuros) y dejar que los filtros de la UI acoten
+                allPayments = data || [];
                 filteredPayments = [...allPayments];
                 renderPayments();
                 updateStats();
