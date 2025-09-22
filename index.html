@@ -331,8 +331,8 @@
                         <input type="text" id="parent-name" name="parent_name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                      <div>
-                        <label for="parent-dni" class="block text-sm font-medium text-gray-700" data-lang="parent_dni">DNI/NIF</label>
-                        <input type="text" id="parent-dni" name="parent_dni" required pattern="[0-9]{8}[A-Za-z]" title="El DNI debe tener 8 dígitos seguidos de una letra" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <label for="parent-dni" class="block text-sm font-medium text-gray-700" data-lang="parent_dni">DNI/NIE/Pasaporte</label>
+                        <input type="text" id="parent-dni" name="parent_dni" required pattern="(?:\d{8}[A-Za-z]|[XYZxyz]\d{7}[A-Za-z]|[A-Za-z0-9]{5,15})" title="Documento válido (DNI, NIE o Pasaporte)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="parent-phone-1" class="block text-sm font-medium text-gray-700" data-lang="parent_phone_1">Telèfon de Contacte 1 <span class="text-red-500">*</span></label>
@@ -520,7 +520,7 @@
                 activity_futbol_dm: "Futbol", activity_patinatge_dc: "Patinatge", activity_futbol_dj: "Futbol", activity_timbals_dv: "Timbals", activity_angles_dt: "Anglès", activity_angles_dc: "Anglès",
                 day_dl: "Dilluns", day_dt: "Dimarts", day_dm: "Dimarts", day_dc: "Dimecres", day_dj: "Dijous", day_dv: "Divendres",
                 parent_data_legend: "Dades del Pare/Mare/Tutor/a",
-                parent_name: "Nom i Cognoms", parent_dni: "DNI/NIF", parent_phone_1: "Telèfon de Contacte 1", parent_phone_2: "Telèfon de Contacte 2", parent_email_1: "Email de Contacte 1", parent_email_2: "Email de Contacte 2",
+                parent_name: "Nom i Cognoms", parent_dni: "DNI/NIE/Passaport", parent_phone_1: "Telèfon de Contacte 1", parent_phone_2: "Telèfon de Contacte 2", parent_email_1: "Email de Contacte 1", parent_email_2: "Email de Contacte 2",
                 optional: "(Opcional)",
                 afa_member_question: "Sou socis de l'AFA?",
                 yes: "Sí", no: "No",
@@ -669,7 +669,7 @@
                 activity_futbol_dm: "Fútbol", activity_patinatge_dc: "Patinaje", activity_futbol_dj: "Fútbol", activity_timbals_dv: "Timbales", activity_angles_dt: "Inglés", activity_angles_dc: "Inglés",
                 day_dl: "Lunes", day_dt: "Martes", day_dm: "Martes", day_dc: "Miércoles", day_dj: "Jueves", day_dv: "Viernes",
                 parent_data_legend: "Datos del Padre/Madre/Tutor/a",
-                parent_name: "Nombre y Apellidos", parent_dni: "DNI/NIF", parent_phone_1: "Teléfono de Contacto 1", parent_phone_2: "Teléfono de Contacto 2", parent_email_1: "Email de Contacto 1", parent_email_2: "Email de Contacto 2",
+                parent_name: "Nombre y Apellidos", parent_dni: "DNI/NIE/Pasaporte", parent_phone_1: "Teléfono de Contacto 1", parent_phone_2: "Teléfono de Contacto 2", parent_email_1: "Email de Contacto 1", parent_email_2: "Email de Contacto 2",
                 optional: "(Opcional)",
                 afa_member_question: "¿Sois socios del AFA?",
                 yes: "Sí", no: "No",
@@ -1046,12 +1046,14 @@
                 return;
             }
             
-            // Validación de formato de DNI
-            const dni = document.getElementById('parent-dni').value;
-            const dniPattern = /^[0-9]{8}[A-Za-z]$/;
-            
-            if (!dniPattern.test(dni)) {
-                showStatus('El DNI debe tener 8 dígitos seguidos de una letra', 'error');
+            // Validación de documento: DNI, NIE o Pasaporte
+            const dni = document.getElementById('parent-dni').value.trim();
+            const dniPattern = /^\d{8}[A-Za-z]$/; // DNI
+            const niePattern = /^[XYZxyz]\d{7}[A-Za-z]$/; // NIE
+            const passportPattern = /^[A-Za-z0-9]{5,15}$/; // Pasaporte (genérico)
+
+            if (!(dniPattern.test(dni) || niePattern.test(dni) || passportPattern.test(dni))) {
+                showStatus('Documento inválido. Introduce DNI, NIE o Pasaporte.', 'error');
                 document.getElementById('parent-dni').focus();
                 return;
             }
