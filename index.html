@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-YcsIPGmO2K8GX+Uo7Cwqwbp0H9Z2NwTz9t0wGq3i3j0k3J1wQ0o8rOZ3w6v2TzqHnJx2mBf7pTgEJ9wOYkN0FQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .form-section { display: none; }
@@ -59,6 +60,10 @@
         }
         .modal-container {
             transition: transform 0.3s ease;
+        }
+        /* Success modal specific tweaks to ensure visibility on mobile (e.g., Pixel) */
+        .success-modal-overlay {
+            backdrop-filter: blur(2px);
         }
         /* New Activity Card Styles */
         .activity-card {
@@ -429,10 +434,33 @@
         </div>
     </div>
 
+    <!-- Success Modal (Submission Confirmation) -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-40 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-[60] modal-overlay success-modal-overlay hidden opacity-0">
+        <div class="relative mx-auto shadow-2xl rounded-2xl bg-white w-full max-w-md modal-container transform scale-95">
+            <div class="p-6 text-center">
+                <div class="mx-auto mb-4 w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900" data-lang="status_success">Preinscripció enviada correctament! Gràcies.</h3>
+                <p class="text-sm text-gray-600 mt-2" data-lang="success_email_hint">T'hem enviat un correu de confirmació a l'adreça indicada.</p>
+                <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button id="success-close-btn" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">OK</button>
+                    <button id="success-view-email-btn" class="w-full inline-flex justify-center items-center px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200" data-lang="success_view_email">Veure resum</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL pública de la Edge Function para el email de confirmación
+        window.CONFIRMATION_EMAIL_WEBHOOK_URL = "https://zaxbtnjkidqwzqsehvld.functions.supabase.co/send-confirmation";
+    </script>
+
     <script type="module">
         const { createClient } = supabase;
         let supabaseClient;
         let currentLang = 'ca';
+        let lastSubmissionSummaryHTML = '';
 
         // =================================================================================
         // == PAS 1: CONFIGURACIÓ DE SUPABASE                                             ==
@@ -536,6 +564,9 @@
                 conditions_link: "condicions de les extraescolars i acollida",
                 submit_button: "Enviar Preinscripció",
                 status_success: "Preinscripció enviada correctament! Gràcies.",
+                success_email_hint: "T'hem enviat un correu de confirmació a l'adreça indicada.",
+                success_view_email: "Veure resum",
+                summary_modal_title: "Resum de la preinscripció",
                 status_error_supabase_credentials: "Error de configuració. Contacta amb l'administrador.",
                 status_error_activity_required: "Has de seleccionar almenys una activitat extraescolar.",
                 status_error_generic: "Error en enviar el formulari: {error}. Si us plau, intenta-ho de nou més tard.",
@@ -685,6 +716,9 @@
                 conditions_link: "condiciones de las extraescolares y acogida",
                 submit_button: "Enviar Preinscripción",
                 status_success: "¡Preinscripción enviada correctamente! Gracias.",
+                success_email_hint: "Te hemos enviado un correo de confirmación a la dirección indicada.",
+                success_view_email: "Ver resumen",
+                summary_modal_title: "Resumen de la preinscripción",
                 status_error_supabase_credentials: "Error de configuración. Contacta con el administrador.",
                 status_error_activity_required: "Debes seleccionar al menos una actividad extraescolar.",
                 status_error_generic: "Error al enviar el formulario: {error}. Por favor, inténtalo de nuevo más tarde.",
@@ -774,6 +808,10 @@
         const modalTitle = document.getElementById('modal-title');
         const modalContent = document.getElementById('modal-content');
         const modalCloseBtn = document.getElementById('modal-close-btn');
+        // Success modal refs
+        const successModal = document.getElementById('success-modal');
+        const successCloseBtn = document.getElementById('success-close-btn');
+        const successViewEmailBtn = document.getElementById('success-view-email-btn');
 
         const openModal = (titleKey, contentKey) => {
             modalTitle.innerText = translations[currentLang][titleKey];
@@ -791,11 +829,70 @@
             setTimeout(() => { modal.classList.add('hidden'); }, 300);
         };
 
+        // Abre el modal usando el contenido HTML del resumen generado
+        const openSummaryModal = () => {
+            modalTitle.innerText = translations[currentLang]['summary_modal_title'];
+            modalContent.innerHTML = lastSubmissionSummaryHTML || '<p>No hi ha informació per mostrar.</p>';
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalOverlay.classList.remove('opacity-0');
+                modalContainer.classList.remove('scale-95');
+            }, 10);
+        };
+
+        // Descargar PDF del resumen
+        const downloadSummaryAsPDF = () => {
+            if (!lastSubmissionSummaryHTML) return;
+            const temp = document.createElement('div');
+            temp.innerHTML = `
+                <div style="font-family: Inter, sans-serif; padding: 16px;">
+                    <h1 style="font-size: 20px; margin: 0 0 12px 0;">${translations[currentLang]['summary_modal_title']}</h1>
+                    ${lastSubmissionSummaryHTML}
+                </div>`;
+            const opt = {
+                margin:       10,
+                filename:     'preinscripcio-resum.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            window.html2pdf().from(temp).set(opt).save();
+        };
+
+        const openSuccessModal = () => {
+            successModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                successModal.classList.remove('opacity-0');
+                successModal.querySelector('.modal-container').classList.remove('scale-95');
+            });
+        };
+
+        const closeSuccessModal = () => {
+            successModal.classList.add('opacity-0');
+            successModal.querySelector('.modal-container').classList.add('scale-95');
+            setTimeout(() => { successModal.classList.add('hidden'); }, 300);
+        };
+
         document.getElementById('image-info-btn').addEventListener('click', () => openModal('image_auth_modal_title', 'image_auth_modal_content'));
         document.getElementById('conditions-btn').addEventListener('click', () => openModal('conditions_modal_title', 'conditions_modal_content'));
         document.getElementById('activities-overview-btn').addEventListener('click', () => openModal('activities_overview_modal_title', 'activities_overview_modal_content'));
         modalCloseBtn.addEventListener('click', closeModal);
         modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+        successCloseBtn.addEventListener('click', closeSuccessModal);
+        // Al pulsar "Ver resumen", mostramos el modal con el resumen de la preinscripción
+        successViewEmailBtn.addEventListener('click', () => {
+            closeSuccessModal();
+            openSummaryModal();
+        });
+        // Tecla rápida: Ctrl/Cmd+P genera el PDF del resumen si el modal está abierto
+        document.addEventListener('keydown', (e) => {
+            const isOpen = !modal.classList.contains('hidden');
+            if (isOpen && ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p')) {
+                e.preventDefault();
+                downloadSummaryAsPDF();
+            }
+        });
+        successModal.addEventListener('click', (e) => { if (e.target === successModal) closeSuccessModal(); });
         
         const setLanguage = (lang) => {
             currentLang = lang;
@@ -1155,6 +1252,22 @@
                 document.getElementById('student-3-section').classList.add('hidden');
                 document.getElementById('student3-activities').classList.add('hidden');
                 document.getElementById('add-third-student').classList.add('hidden');
+
+                // Construir resumen y mostrar modal centrado
+                lastSubmissionSummaryHTML = `
+                    <div class="space-y-3 text-sm">
+                        <p><strong>Pare/Mare/Tutor:</strong> ${submissionData.parent_name}</p>
+                        <p><strong>Email:</strong> ${submissionData.parent_email_1}</p>
+                        <p><strong>Telèfon:</strong> ${submissionData.parent_phone_1}${submissionData.parent_phone_2 && submissionData.parent_phone_2 !== 'No informat' ? ' / ' + submissionData.parent_phone_2 : ''}</p>
+                        <div>
+                            <p class="font-semibold">Alumnes:</p>
+                            <ul class="list-disc list-inside">
+                                ${submissionData.students.map((s, i) => `<li>${i+1}. ${s.name} ${s.surname} - ${s.course} - ${s.activities.join(', ')}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>`;
+                openSuccessModal();
+                // Eliminado: envío de email
             } catch (error) {
                 console.error('Error submitting to Supabase:', error);
                 showStatus(translations[currentLang].status_error_generic.replace('{error}', error.message), 'error');
