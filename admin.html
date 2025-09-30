@@ -101,6 +101,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-600">Total Inscripciones</p>
                             <p id="total-inscriptions" class="text-2xl font-semibold text-gray-900">-</p>
+                            <p id="baja-inscriptions" class="text-xs text-gray-500">- en baja</p>
                         </div>
                     </div>
                 </div>
@@ -392,7 +393,8 @@
         }
 
         function updateStats() {
-            let totalStudents = 0;
+            let totalStudentsActive = 0;
+            let totalStudentsBaja = 0;
             let afaMemberStudents = 0;
 
             allInscriptions.forEach(ins => {
@@ -405,20 +407,29 @@
                     studentCount = 1;
                 }
 
-                totalStudents += studentCount;
-
-                if (ins.afa_member) {
-                    afaMemberStudents += studentCount;
+                const isBaja = ins.status === 'baja';
+                if (isBaja) {
+                    totalStudentsBaja += studentCount;
+                } else {
+                    totalStudentsActive += studentCount;
+                    if (ins.afa_member) {
+                        afaMemberStudents += studentCount;
+                    }
                 }
             });
 
-            document.getElementById('total-inscriptions').textContent = totalStudents;
+            const totalAll = totalStudentsActive + totalStudentsBaja;
+            const totalEl = document.getElementById('total-inscriptions');
+            const bajaEl = document.getElementById('baja-inscriptions');
+            if (totalEl) totalEl.textContent = totalAll;
+            if (bajaEl) bajaEl.textContent = `${totalStudentsBaja} en baja`;
             document.getElementById('afa-members').textContent = afaMemberStudents;
-            document.getElementById('non-members').textContent = totalStudents - afaMemberStudents;
+            document.getElementById('non-members').textContent = Math.max(totalStudentsActive - afaMemberStudents, 0);
 
             // Most popular activity logic is correct as it iterates through students
             const activityCounts = {};
             allInscriptions.forEach(ins => {
+                if (ins.status === 'baja') return; // no contar bajas para popular
                 if (ins.students && Array.isArray(ins.students)) {
                     // New format with multiple students
                     ins.students.forEach(student => {
