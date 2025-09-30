@@ -99,23 +99,8 @@
                             </svg>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Total Inscripciones</p>
-                            <p id="total-inscriptions" class="text-2xl font-semibold text-gray-900">-</p>
-                            <p id="baja-inscriptions" class="text-xs text-gray-500">- en baja</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-green-100 rounded-lg">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Socios AFA</p>
-                            <p id="afa-members" class="text-2xl font-semibold text-gray-900">-</p>
+                            <p class="text-sm font-medium text-gray-600">Inscritos (altas)</p>
+                            <p id="active-inscriptions" class="text-2xl font-semibold text-gray-900">-</p>
                         </div>
                     </div>
                 </div>
@@ -128,8 +113,22 @@
                             </svg>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">No Socios</p>
-                            <p id="non-members" class="text-2xl font-semibold text-gray-900">-</p>
+                            <p class="text-sm font-medium text-gray-600">Bajas (bajas)</p>
+                            <p id="baja-inscriptions-main" class="text-2xl font-semibold text-gray-900">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Socios AFA / No socios</p>
+                            <p id="afa-split" class="text-2xl font-semibold text-gray-900">-</p>
                         </div>
                     </div>
                 </div>
@@ -177,8 +176,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Estado:</label>
                         <select id="status-filter" class="border border-gray-300 rounded-md px-3 py-2">
                             <option value="all">Todos</option>
-                            <option value="active">Solo Activos</option>
-                            <option value="suspended">Solo Suspendidos</option>
+                            <option value="alta">Altas</option>
+                            <option value="baja">Bajas</option>
                         </select>
                     </div>
                     <div>
@@ -418,13 +417,12 @@
                 }
             });
 
-            const totalAll = totalStudentsActive + totalStudentsBaja;
-            const totalEl = document.getElementById('total-inscriptions');
-            const bajaEl = document.getElementById('baja-inscriptions');
-            if (totalEl) totalEl.textContent = totalAll;
-            if (bajaEl) bajaEl.textContent = `${totalStudentsBaja} en baja`;
-            document.getElementById('afa-members').textContent = afaMemberStudents;
-            document.getElementById('non-members').textContent = Math.max(totalStudentsActive - afaMemberStudents, 0);
+            const activeEl = document.getElementById('active-inscriptions');
+            const bajaMainEl = document.getElementById('baja-inscriptions-main');
+            const afaSplitEl = document.getElementById('afa-split');
+            if (activeEl) activeEl.textContent = totalStudentsActive;
+            if (bajaMainEl) bajaMainEl.textContent = totalStudentsBaja;
+            if (afaSplitEl) afaSplitEl.textContent = `${afaMemberStudents}/${Math.max(totalStudentsActive - afaMemberStudents, 0)}`;
 
             // Most popular activity logic is correct as it iterates through students
             const activityCounts = {};
@@ -1084,7 +1082,14 @@
                     }
                 }
 
-                return matchesCourse && matchesActivity && matchesSearch;
+                // Filtro por estado (altas/bajas)
+                const stateFilter = document.getElementById('status-filter').value;
+                const isBaja = inscription.status === 'baja';
+                let matchesState = true;
+                if (stateFilter === 'alta') matchesState = !isBaja;
+                if (stateFilter === 'baja') matchesState = isBaja;
+
+                return matchesCourse && matchesActivity && matchesSearch && matchesState;
             });
 
             currentPage = 1;
