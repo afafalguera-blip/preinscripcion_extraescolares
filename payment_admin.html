@@ -344,7 +344,7 @@
             }
 
             tbody.innerHTML = filteredPayments.map(payment => `
-                <tr class="hover:bg-gray-50">
+                <tr class="${getRowBgClass(payment.status)} hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm font-medium text-gray-900">${payment.student_name} ${payment.student_surname}</div>
                     </td>
@@ -382,7 +382,7 @@
 
             // Render mobile cards
             const cards = filteredPayments.map(payment => `
-                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 ${payment.status === 'paid' ? 'border-green-400' : payment.status === 'overdue' ? 'border-red-400' : 'border-yellow-400'}">
+                <div class="rounded-lg shadow-md p-4 border-l-4 ${payment.status === 'paid' ? 'border-green-400 bg-green-50' : payment.status === 'overdue' ? 'border-red-400 bg-red-50' : 'border-yellow-400 bg-white'}">
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <h4 class="font-bold text-gray-900">${payment.student_name} ${payment.student_surname}</h4>
@@ -416,6 +416,14 @@
                 case 'pending': return 'bg-yellow-100 text-yellow-800';
                 case 'overdue': return 'bg-red-100 text-red-800';
                 default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getRowBgClass(status) {
+            switch (status) {
+                case 'paid': return 'bg-green-50';
+                case 'overdue': return 'bg-red-50';
+                default: return 'bg-white';
             }
         }
 
