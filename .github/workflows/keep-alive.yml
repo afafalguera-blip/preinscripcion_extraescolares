@@ -12,9 +12,28 @@ jobs:
     steps:
       - name: Ping Supabase to prevent pausing
         run: |
-          curl -X GET \
+          echo "🔄 Ejecutando keep-alive para Supabase..."
+          echo "📅 Fecha y hora: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          
+          response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
             "${{ secrets.SUPABASE_URL }}/rest/v1/inscripcions?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          
+          http_status=$(echo "$response" | grep "HTTP_STATUS" | cut -d: -f2)
+          body=$(echo "$response" | sed '/HTTP_STATUS/d')
+          
+          echo "📡 Respuesta recibida:"
+          echo "$body" | jq '.' || echo "$body"
+          echo ""
+          echo "✅ Estado HTTP: $http_status"
+          
+          if [ "$http_status" -eq 200 ]; then
+            echo "✅ Keep-alive ejecutado correctamente. Supabase está activo."
+          else
+            echo "⚠️  Respuesta inesperada (HTTP $http_status). Verifica la configuración."
+            exit 1
+          fi
         continue-on-error: true  # Continúa aunque haya error para no romper el workflow
 
