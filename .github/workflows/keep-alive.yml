@@ -1,0 +1,20 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Se ejecuta a las 8:00 AM UTC todos los días
+    - cron: '0 8 * * *'
+  workflow_dispatch:  # Permite ejecutar manualmente desde la pestaña Actions
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase to prevent pausing
+        run: |
+          curl -X GET \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/inscripcions?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+        continue-on-error: true  # Continúa aunque haya error para no romper el workflow
+

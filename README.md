@@ -88,14 +88,45 @@ const SUPABASE_KEY = "TU_ANON_KEY_DE_SUPABASE";
 4. Tu sitio estará disponible en:
    `https://TU_USUARIO.github.io/NOMBRE_REPOSITORIO`
 
+### 5. Configurar Keep-Alive para Supabase (Opcional pero Recomendado)
+
+Para evitar que Supabase pause automáticamente tu base de datos por inactividad, el proyecto incluye un workflow de GitHub Actions que realiza una petición diaria a la API.
+
+**Configurar los Secrets en GitHub:**
+
+1. Ve a tu repositorio en GitHub
+2. Ve a **Settings** → **Secrets and variables** → **Actions**
+3. Haz clic en **New repository secret**
+4. Añade los siguientes secrets:
+
+   - **Name**: `SUPABASE_URL`
+     - **Value**: Tu URL de Supabase (ej: `https://xxxxx.supabase.co`)
+   
+   - **Name**: `SUPABASE_ANON_KEY`
+     - **Value**: Tu Anon Key de Supabase
+
+**Funcionamiento:**
+
+- El workflow se ejecuta automáticamente todos los días a las **8:00 AM UTC**
+- Realiza una petición GET mínima a la tabla `inscripcions` para simular actividad
+- Puedes ejecutar el workflow manualmente desde la pestaña **Actions** → **Keep Supabase Alive** → **Run workflow**
+
+**Nota:** Si no configuras los secrets, el workflow fallará silenciosamente pero no afectará al resto del proyecto.
+
 ## 📁 Estructura de archivos
 
 ```
 tu-repositorio/
-├── index.html          # Formulario de preinscripción
-├── admin.html          # Panel de administración
-├── navigation.html     # Página de navegación
-└── README.md          # Documentación
+├── index.html                    # Formulario de preinscripción
+├── admin.html                    # Panel de administración
+├── admin_login.html              # Login de administración
+├── navigation.html               # Página de navegación
+├── payment_admin.html            # Panel de administración de pagos
+├── debug_auth.html               # Página de depuración de autenticación
+├── .github/
+│   └── workflows/
+│       └── keep-alive.yml        # Workflow para mantener Supabase activo
+└── README.md                     # Documentación
 ```
 
 ## 🔧 Funcionalidades del Panel de Administración
