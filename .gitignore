@@ -1,0 +1,8 @@
+# Ignorar backups locales pesados (no necesarios para el código)
+backup bd/
+
+# Artefactos típicos
+.DS_Store
+Thumbs.db
+*.log
+

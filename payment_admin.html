@@ -6,6 +6,9 @@
     <title>Gestión de Pagos - AFA Escola Falguera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles.css">
+    <script src="assets/ui.js" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     
@@ -17,29 +20,29 @@
                     <h1 class="text-2xl font-bold text-gray-900">Gestión de Pagos</h1>
                     <p class="text-sm text-gray-600">AFA Escola Falguera - Seguimiento de Pagos</p>
                 </div>
-                <div class="flex space-x-4">
-                    <button onclick="loadPayments()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                <div class="flex flex-wrap gap-2 justify-end">
+                    <button id="btn-refresh" onclick="loadPayments()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                         Actualizar
                     </button>
-                    <button onclick="exportPayments()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                    <button onclick="exportPayments()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                         Exportar CSV
                     </button>
-                    <button onclick="recordPayment()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                    <button onclick="recordPayment()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
                         Registrar Pago
                     </button>
-                    <button onclick="generateMonthlyPayments()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                    <button onclick="generateMonthlyPayments()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
                         Generar Pagos
                     </button>
-                    <button onclick="deleteMonthlyPayments()" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
+                    <button onclick="deleteMonthlyPayments()" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
                         Eliminar Mes
                     </button>
-                    <a href="admin.html" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center">
+                    <a href="admin.html" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                         Volver al Admin
                     </a>
-                    <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center">
+                    <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                         </svg>
@@ -112,7 +115,7 @@
 
         <!-- Filters -->
         <div class="bg-white p-6 rounded-lg shadow mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por estado:</label>
                     <select id="status-filter" class="w-full border border-gray-300 rounded-md px-3 py-2">
@@ -138,14 +141,53 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mes:</label>
+                    <select id="month-filter" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Año:</label>
+                    <select id="year-filter" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Buscar estudiante:</label>
                     <input type="text" id="search-input" placeholder="Nombre del estudiante..." 
                            class="w-full border border-gray-300 rounded-md px-3 py-2">
                 </div>
-                <div class="flex items-end">
-                    <button onclick="applyFilters()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                        Aplicar Filtros
+                <div class="flex items-end gap-2">
+                    <button onclick="applyFilters()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                        Aplicar
                     </button>
+                    <button onclick="resetFilters()" class="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors">
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ordenar por:</label>
+                    <select id="sort-by" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="due_date_asc">Vencimiento (asc)</option>
+                        <option value="payment_date_desc">Fecha pago (desc)</option>
+                        <option value="student_asc">Estudiante (A-Z)</option>
+                        <option value="amount_desc">Importe (desc)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex flex-wrap gap-4 items-center justify-between">
+                        <div class="text-sm text-gray-700">
+                            <span class="font-semibold" id="filtered-count">0</span> pagos (filtrados)
+                        </div>
+                        <div class="text-sm text-gray-700">
+                            Total filtrado: <span class="font-semibold" id="filtered-amount">-</span>
+                        </div>
+                        <div class="text-sm text-gray-700">
+                            Pendiente: <span class="font-semibold" id="filtered-pending-amount">-</span> · Vencido: <span class="font-semibold" id="filtered-overdue-amount">-</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -240,6 +282,7 @@
         let supabaseClient;
         let allPayments = [];
         let filteredPayments = [];
+        const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
         // Verificar autenticación
         function checkAuthentication() {
@@ -317,6 +360,7 @@
 
         async function loadPayments() {
             try {
+                setLoading(true);
                 const { data, error } = await supabaseClient
                     .from('payments')
                     .select('*')
@@ -327,12 +371,35 @@
                 // Mostrar todos los pagos (incluidos futuros) y dejar que los filtros de la UI acoten
                 allPayments = data || [];
                 filteredPayments = [...allPayments];
+                populateMonthYearFilters();
                 renderPayments();
                 updateStats();
+                updateFilteredSummary();
             } catch (error) {
                 console.error('Error loading payments:', error);
                 showError('Error al cargar los pagos');
+            } finally {
+                setLoading(false);
             }
+        }
+
+        function setLoading(isLoading) {
+            const btn = document.getElementById('btn-refresh');
+            if (btn) btn.disabled = isLoading;
+        }
+
+        function derivedStatus(payment) {
+            const raw = payment.status || 'pending';
+            if (raw === 'paid') return 'paid';
+            const due = payment.due_date ? new Date(payment.due_date) : null;
+            if (due && !Number.isNaN(due.getTime())) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const dueDay = new Date(due);
+                dueDay.setHours(0,0,0,0);
+                if (dueDay < today) return 'overdue';
+            }
+            return raw;
         }
 
         function renderPayments() {
@@ -340,11 +407,13 @@
             
             if (filteredPayments.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No hay pagos para mostrar</td></tr>';
+                const cardsContainer = document.getElementById('payments-cards-container');
+                if (cardsContainer) cardsContainer.innerHTML = '<div class="text-center py-8 text-gray-500">No hay pagos para mostrar</div>';
                 return;
             }
 
             tbody.innerHTML = filteredPayments.map(payment => `
-                <tr class="${getRowBgClass(payment.status)} hover:bg-gray-50">
+                <tr class="${getRowBgClass(derivedStatus(payment))} hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm font-medium text-gray-900">${payment.student_name} ${payment.student_surname}</div>
                     </td>
@@ -352,26 +421,29 @@
                         <span class="text-sm text-gray-900">${payment.course}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="text-sm text-gray-900">${payment.activities.join(', ')}</div>
+                        <div class="text-sm text-gray-900">${Array.isArray(payment.activities) ? payment.activities.join(', ') : (payment.activities || '')}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">€${payment.amount}</div>
+                        <div class="text-sm font-medium text-gray-900">${ui?.formatCurrencyEUR ? ui.formatCurrencyEUR(payment.amount) : `€${payment.amount}`}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm text-gray-900">${payment.due_date ? new Date(payment.due_date).toLocaleDateString('es-ES') : 'N/A'}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="status-badge ${getStatusClass(payment.status)}">
-                            ${getStatusText(payment.status)}
+                        <span class="status-badge ${getStatusClass(derivedStatus(payment))}">
+                            ${getStatusText(derivedStatus(payment))}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        ${payment.status === 'pending' ? 
+                        ${derivedStatus(payment) !== 'paid' ? 
                             `<button onclick="markAsPaid('${payment.id}')" class="text-green-600 hover:text-green-900 mr-3">Marcar como Pagado</button>` : 
                             `<button onclick="markAsUnpaid('${payment.id}')" class="text-orange-600 hover:text-orange-900 mr-3">Desmarcar Pago</button>`
                         }
                         <button onclick="viewStudentHistory('${payment.student_name}', '${payment.student_surname}')" class="text-purple-600 hover:text-purple-900">
                             Historial
+                        </button>
+                        <button onclick="copyConcept('${escapeAttr(payment.student_name)}', '${escapeAttr(payment.student_surname)}', '${escapeAttr(payment.course)}', '${escapeAttr(Array.isArray(payment.activities) ? payment.activities.join(' / ') : (payment.activities || ''))}')" class="text-blue-600 hover:text-blue-900 ml-3">
+                            Copiar concepto
                         </button>
                         <button onclick="deletePayment('${payment.id}')" class="text-red-600 hover:text-red-900 ml-3">
                             Eliminar
@@ -382,24 +454,25 @@
 
             // Render mobile cards
             const cards = filteredPayments.map(payment => `
-                <div class="rounded-lg shadow-md p-4 border-l-4 ${payment.status === 'paid' ? 'border-green-400 bg-green-50' : payment.status === 'overdue' ? 'border-red-400 bg-red-50' : 'border-yellow-400 bg-white'}">
+                <div class="rounded-lg shadow-md p-4 border-l-4 ${derivedStatus(payment) === 'paid' ? 'border-green-400 bg-green-50' : derivedStatus(payment) === 'overdue' ? 'border-red-400 bg-red-50' : 'border-yellow-400 bg-white'}">
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <h4 class="font-bold text-gray-900">${payment.student_name} ${payment.student_surname}</h4>
                             <p class="text-sm text-gray-600">${payment.course}</p>
                         </div>
-                        <span class="status-badge ${getStatusClass(payment.status)}">${getStatusText(payment.status)}</span>
+                        <span class="status-badge ${getStatusClass(derivedStatus(payment))}">${getStatusText(derivedStatus(payment))}</span>
                     </div>
                     <div class="text-sm text-gray-800">
-                        <p><strong>Actividades:</strong> ${payment.activities.join(', ')}</p>
-                        <p><strong>Monto:</strong> €${payment.amount}</p>
+                        <p><strong>Actividades:</strong> ${Array.isArray(payment.activities) ? payment.activities.join(', ') : (payment.activities || '')}</p>
+                        <p><strong>Monto:</strong> ${ui?.formatCurrencyEUR ? ui.formatCurrencyEUR(payment.amount) : `€${payment.amount}`}</p>
                         <p><strong>Vencimiento:</strong> ${payment.due_date ? new Date(payment.due_date).toLocaleDateString('es-ES') : 'N/A'}</p>
                     </div>
                     <div class="mt-3 pt-3 border-t flex justify-end space-x-3">
-                        ${payment.status === 'pending' ? 
+                        ${derivedStatus(payment) !== 'paid' ? 
                             `<button onclick=\"markAsPaid('${payment.id}')\" class=\"text-green-600 hover:text-green-800 text-sm\">Marcar pagado</button>` :
                             `<button onclick=\"markAsUnpaid('${payment.id}')\" class=\"text-orange-600 hover:text-orange-800 text-sm\">Desmarcar</button>`}
                         <button onclick="viewStudentHistory('${payment.student_name}', '${payment.student_surname}')" class="text-purple-600 hover:text-purple-800 text-sm">Historial</button>
+                        <button onclick="copyConcept('${escapeAttr(payment.student_name)}', '${escapeAttr(payment.student_surname)}', '${escapeAttr(payment.course)}', '${escapeAttr(Array.isArray(payment.activities) ? payment.activities.join(' / ') : (payment.activities || ''))}')" class="text-blue-600 hover:text-blue-800 text-sm">Copiar concepto</button>
                         <button onclick="deletePayment('${payment.id}')" class="text-red-600 hover:text-red-800 text-sm">Eliminar</button>
                     </div>
                 </div>
@@ -438,9 +511,9 @@
 
         function updateStats() {
             const total = allPayments.length;
-            const paid = allPayments.filter(p => p.status === 'paid').length;
-            const pending = allPayments.filter(p => p.status === 'pending').length;
-            const overdue = allPayments.filter(p => p.status === 'overdue').length;
+            const paid = allPayments.filter(p => derivedStatus(p) === 'paid').length;
+            const pending = allPayments.filter(p => derivedStatus(p) === 'pending').length;
+            const overdue = allPayments.filter(p => derivedStatus(p) === 'overdue').length;
 
             document.getElementById('total-payments').textContent = total;
             document.getElementById('paid-payments').textContent = paid;
@@ -451,19 +524,91 @@
         function applyFilters() {
             const statusFilter = document.getElementById('status-filter').value;
             const courseFilter = document.getElementById('course-filter').value;
+            const monthFilter = document.getElementById('month-filter').value;
+            const yearFilter = document.getElementById('year-filter').value;
+            const sortBy = document.getElementById('sort-by').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
 
             filteredPayments = allPayments.filter(payment => {
-                const matchesStatus = !statusFilter || payment.status === statusFilter;
+                const st = derivedStatus(payment);
+                const matchesStatus = !statusFilter || st === statusFilter;
                 const matchesCourse = !courseFilter || payment.course === courseFilter;
+                const matchesMonth = !monthFilter || String(payment.payment_month || '') === String(monthFilter);
+                const matchesYear = !yearFilter || String(payment.payment_year || '') === String(yearFilter);
                 const matchesSearch = !searchTerm || 
                     payment.student_name.toLowerCase().includes(searchTerm) ||
-                    payment.student_surname.toLowerCase().includes(searchTerm);
+                    payment.student_surname.toLowerCase().includes(searchTerm) ||
+                    (Array.isArray(payment.activities) ? payment.activities.join(' ').toLowerCase().includes(searchTerm) : false) ||
+                    (payment.bank_reference ? String(payment.bank_reference).toLowerCase().includes(searchTerm) : false);
 
-                return matchesStatus && matchesCourse && matchesSearch;
+                return matchesStatus && matchesCourse && matchesMonth && matchesYear && matchesSearch;
             });
 
+            // Ordenación
+            const byStudent = (a, b) => `${a.student_name} ${a.student_surname}`.localeCompare(`${b.student_name} ${b.student_surname}`, 'es');
+            const byAmountDesc = (a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0);
+            const byDueAsc = (a, b) => new Date(a.due_date || 0) - new Date(b.due_date || 0);
+            const byPayDateDesc = (a, b) => new Date(b.payment_date || 0) - new Date(a.payment_date || 0);
+            if (sortBy === 'student_asc') filteredPayments.sort(byStudent);
+            if (sortBy === 'amount_desc') filteredPayments.sort(byAmountDesc);
+            if (sortBy === 'due_date_asc') filteredPayments.sort(byDueAsc);
+            if (sortBy === 'payment_date_desc') filteredPayments.sort(byPayDateDesc);
+
             renderPayments();
+            updateFilteredSummary();
+        }
+
+        function resetFilters() {
+            document.getElementById('status-filter').value = '';
+            document.getElementById('course-filter').value = '';
+            document.getElementById('month-filter').value = '';
+            document.getElementById('year-filter').value = '';
+            document.getElementById('search-input').value = '';
+            document.getElementById('sort-by').value = 'due_date_asc';
+            applyFilters();
+        }
+
+        function populateMonthYearFilters() {
+            const monthSel = document.getElementById('month-filter');
+            const yearSel = document.getElementById('year-filter');
+            if (!monthSel || !yearSel) return;
+
+            const months = new Set();
+            const years = new Set();
+            allPayments.forEach(p => {
+                if (p.payment_month) months.add(String(p.payment_month));
+                if (p.payment_year) years.add(String(p.payment_year));
+            });
+
+            const currentMonth = monthSel.value;
+            const currentYear = yearSel.value;
+
+            monthSel.innerHTML = '<option value=\"\">Todos</option>' + Array.from(months).sort((a,b)=>Number(a)-Number(b)).map(m => {
+                const idx = Number(m) - 1;
+                const label = (idx >= 0 && idx < 12) ? `${m} - ${monthNames[idx]}` : m;
+                return `<option value=\"${m}\">${label}</option>`;
+            }).join('');
+
+            yearSel.innerHTML = '<option value=\"\">Todos</option>' + Array.from(years).sort((a,b)=>Number(b)-Number(a)).map(y => `<option value=\"${y}\">${y}</option>`).join('');
+
+            monthSel.value = currentMonth;
+            yearSel.value = currentYear;
+        }
+
+        function updateFilteredSummary() {
+            const countEl = document.getElementById('filtered-count');
+            const totalEl = document.getElementById('filtered-amount');
+            const pendingEl = document.getElementById('filtered-pending-amount');
+            const overdueEl = document.getElementById('filtered-overdue-amount');
+
+            const total = filteredPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+            const pending = filteredPayments.filter(p => derivedStatus(p) === 'pending').reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+            const overdue = filteredPayments.filter(p => derivedStatus(p) === 'overdue').reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+
+            if (countEl) countEl.textContent = String(filteredPayments.length);
+            if (totalEl) totalEl.textContent = ui?.formatCurrencyEUR ? ui.formatCurrencyEUR(total) : `€${total.toFixed(2)}`;
+            if (pendingEl) pendingEl.textContent = ui?.formatCurrencyEUR ? ui.formatCurrencyEUR(pending) : `€${pending.toFixed(2)}`;
+            if (overdueEl) overdueEl.textContent = ui?.formatCurrencyEUR ? ui.formatCurrencyEUR(overdue) : `€${overdue.toFixed(2)}`;
         }
 
         function recordPayment() {
@@ -602,42 +747,55 @@
         }
 
         function exportPayments() {
-            const csvContent = [
-                ['Estudiante', 'Curso', 'Actividades', 'Monto', 'Fecha Vencimiento', 'Estado', 'Referencia Bancaria'],
+            const rows = [
+                ['Estudiante', 'Curso', 'Actividades', 'Importe', 'Vencimiento', 'Estado', 'Fecha de pago', 'Referencia bancaria', 'Notas', 'Mes', 'Año'],
                 ...filteredPayments.map(payment => [
-                    `${payment.student_name} ${payment.student_surname}`,
-                    payment.course,
-                    payment.activities.join('; '),
-                    payment.amount,
-                    new Date(payment.payment_date).toLocaleDateString('es-ES'),
-                    getStatusText(payment.status),
-                    payment.bank_reference || ''
+                    `${payment.student_name || ''} ${payment.student_surname || ''}`.trim(),
+                    payment.course || '',
+                    Array.isArray(payment.activities) ? payment.activities.join('; ') : (payment.activities || ''),
+                    Number(payment.amount) || 0,
+                    ui?.formatDateES ? ui.formatDateES(payment.due_date) : (payment.due_date ? new Date(payment.due_date).toLocaleDateString('es-ES') : ''),
+                    getStatusText(derivedStatus(payment)),
+                    ui?.formatDateES ? ui.formatDateES(payment.payment_date) : (payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('es-ES') : ''),
+                    payment.bank_reference || '',
+                    payment.notes || '',
+                    payment.payment_month || '',
+                    payment.payment_year || ''
                 ])
-            ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+            ];
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `pagos_afa_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
+            const filename = `pagos_afa_${new Date().toISOString().split('T')[0]}.csv`;
+            if (ui?.downloadCsv) {
+                ui.downloadCsv(filename, rows);
+            } else {
+                // fallback mínimo
+                const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+                const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+            }
         }
 
         function setupEventListeners() {
             document.getElementById('status-filter').addEventListener('change', applyFilters);
             document.getElementById('course-filter').addEventListener('change', applyFilters);
+            document.getElementById('month-filter').addEventListener('change', applyFilters);
+            document.getElementById('year-filter').addEventListener('change', applyFilters);
+            document.getElementById('sort-by').addEventListener('change', applyFilters);
             document.getElementById('search-input').addEventListener('input', applyFilters);
             
             document.getElementById('record-payment-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                const formData = new FormData(e.target);
                 const paymentData = {
-                    student_name: formData.get('student-name'),
-                    student_surname: formData.get('student-surname'),
-                    payment_date: formData.get('payment-date'),
-                    amount: parseFloat(formData.get('payment-amount')),
-                    bank_reference: formData.get('bank-reference'),
-                    notes: formData.get('payment-notes')
+                    student_name: document.getElementById('student-name').value.trim(),
+                    student_surname: document.getElementById('student-surname').value.trim(),
+                    payment_date: document.getElementById('payment-date').value,
+                    amount: parseFloat(document.getElementById('payment-amount').value),
+                    bank_reference: document.getElementById('bank-reference').value.trim(),
+                    notes: document.getElementById('payment-notes').value.trim()
                 };
 
                 try {
@@ -658,14 +816,15 @@
                         })
                     });
 
-                    const result = await response.json();
+                    const json = await response.json().catch(() => null);
+                    const result = Array.isArray(json) ? json[0] : json;
                     
-                    if (result[0].success) {
+                    if (result && result.success) {
                         showSuccess('Pago registrado exitosamente');
                         closeRecordModal();
                         loadPayments();
                     } else {
-                        showError(result[0].message);
+                        showError(result && result.message ? result.message : 'No se pudo registrar el pago');
                     }
                 } catch (error) {
                     console.error('Error recording payment:', error);
@@ -675,13 +834,29 @@
         }
 
         function showSuccess(message) {
-            // Implementar notificación de éxito
+            if (window.ui?.toast) return window.ui.toast(message, 'success');
             alert('Éxito: ' + message);
         }
 
         function showError(message) {
-            // Implementar notificación de error
+            if (window.ui?.toast) return window.ui.toast(message, 'error');
             alert('Error: ' + message);
+        }
+
+        function escapeAttr(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\\n/g, ' ').replace(/\\r/g, ' ');
+        }
+
+        async function copyConcept(studentName, studentSurname, course, activitiesText) {
+            const concept = `${studentName} ${studentSurname} - ${course} - ${activitiesText}`.replace(/\s+/g, ' ').trim();
+            try {
+                await navigator.clipboard.writeText(concept);
+                showSuccess('Concepto copiado al portapapeles');
+            } catch (e) {
+                console.error('Clipboard error:', e);
+                showError('No se pudo copiar el concepto');
+            }
         }
 
         function viewPaymentDetails(paymentId) {
@@ -862,10 +1037,6 @@
         </div>
     </div>
 
-    <style>
-        .status-badge {
-            @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-        }
-    </style>
+    <!-- estilos compartidos en assets/styles.css -->
 </body>
 </html>
