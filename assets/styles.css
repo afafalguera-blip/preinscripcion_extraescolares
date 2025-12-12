@@ -82,4 +82,12 @@ body {
   background: rgba(239, 246, 255, .95);
 }
 
+/* Acordeón simple (detalles) */
+details summary {
+  list-style: none;
+}
+details summary::-webkit-details-marker {
+  display: none;
+}
+
 

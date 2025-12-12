@@ -176,6 +176,17 @@
                         <option value="amount_desc">Importe (desc)</option>
                     </select>
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Vista:</label>
+                    <div class="inline-flex rounded-lg border border-gray-200 bg-white overflow-hidden w-full">
+                        <button id="view-list" type="button" class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                            Lista
+                        </button>
+                        <button id="view-month" type="button" class="flex-1 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                            Por mes
+                        </button>
+                    </div>
+                </div>
                 <div class="md:col-span-2">
                     <div class="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex flex-wrap gap-4 items-center justify-between">
                         <div class="text-sm text-gray-700">
@@ -192,33 +203,55 @@
             </div>
         </div>
 
-        <!-- Payments Table (Desktop) -->
-        <div class="bg-white rounded-lg shadow overflow-hidden hidden md:block">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Lista de Pagos</h3>
+        <!-- View: Lista -->
+        <section id="section-view-list">
+            <!-- Payments Table (Desktop) -->
+            <div class="bg-white rounded-lg shadow overflow-hidden hidden md:block">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Lista de Pagos</h3>
+                    <p class="text-sm text-gray-500">Tip: filtra por mes/año y exporta CSV.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Curso</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actividades</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Importe</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimiento</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payments-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Payments will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Curso</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actividades</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Vencimiento</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payments-table-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Payments will be loaded here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
-        <!-- Payments Cards (Mobile) -->
-        <div id="payments-cards-container" class="md:hidden p-4 space-y-4"></div>
+            <!-- Payments Cards (Mobile) -->
+            <div id="payments-cards-container" class="md:hidden p-4 space-y-4"></div>
+        </section>
+
+        <!-- View: Por mes -->
+        <section id="section-view-month" class="hidden">
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Pagos por mes</h3>
+                        <p class="text-sm text-gray-500">Agrupado por mes/año. Despliega para ver detalle y acciones.</p>
+                    </div>
+                    <button onclick="expandAllMonths()" class="text-sm font-semibold text-blue-600 hover:text-blue-800">
+                        Expandir todo
+                    </button>
+                </div>
+                <div id="payments-by-month" class="divide-y divide-gray-200">
+                    <!-- Month groups here -->
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- Record Payment Modal -->
@@ -283,6 +316,7 @@
         let allPayments = [];
         let filteredPayments = [];
         const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        let currentView = 'list'; // 'list' | 'month'
 
         // Verificar autenticación
         function checkAuthentication() {
@@ -375,6 +409,7 @@
                 renderPayments();
                 updateStats();
                 updateFilteredSummary();
+                renderCurrentView();
             } catch (error) {
                 console.error('Error loading payments:', error);
                 showError('Error al cargar los pagos');
@@ -483,6 +518,155 @@
             }
         }
 
+        function renderMonthlyView() {
+            const container = document.getElementById('payments-by-month');
+            if (!container) return;
+
+            if (!filteredPayments || filteredPayments.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-gray-500">No hay pagos para mostrar</div>`;
+                return;
+            }
+
+            // Agrupar por year-month (usamos payment_year/payment_month si existen, sino inferimos de due_date)
+            const keyFor = (p) => {
+                const y = p.payment_year || (p.due_date ? new Date(p.due_date).getFullYear() : null);
+                const m = p.payment_month || (p.due_date ? (new Date(p.due_date).getMonth() + 1) : null);
+                if (!y || !m) return 'Sin fecha';
+                return `${String(y)}-${String(m).padStart(2, '0')}`;
+            };
+
+            const groups = new Map();
+            for (const p of filteredPayments) {
+                const k = keyFor(p);
+                if (!groups.has(k)) groups.set(k, []);
+                groups.get(k).push(p);
+            }
+
+            const sortedKeys = Array.from(groups.keys()).sort((a, b) => {
+                if (a === 'Sin fecha') return 1;
+                if (b === 'Sin fecha') return -1;
+                return b.localeCompare(a); // desc
+            });
+
+            const monthLabel = (key) => {
+                if (key === 'Sin fecha') return 'Sin fecha';
+                const [y, mm] = key.split('-');
+                const m = Number(mm);
+                const name = monthNames[m - 1] || mm;
+                return `${name} ${y}`;
+            };
+
+            const sum = (arr) => arr.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+
+            container.innerHTML = sortedKeys
+                .map((k) => {
+                    const list = groups.get(k) || [];
+                    const total = sum(list);
+                    const paid = sum(list.filter((p) => derivedStatus(p) === 'paid'));
+                    const pending = sum(list.filter((p) => derivedStatus(p) === 'pending'));
+                    const overdue = sum(list.filter((p) => derivedStatus(p) === 'overdue'));
+
+                    const fmt = (n) => (window.ui?.formatCurrencyEUR ? window.ui.formatCurrencyEUR(n) : `€${Number(n || 0).toFixed(2)}`);
+
+                    const rows = list
+                        .sort((a, b) => {
+                            const da = new Date(a.due_date || 0).getTime();
+                            const db = new Date(b.due_date || 0).getTime();
+                            return da - db;
+                        })
+                        .map((p) => {
+                            const st = derivedStatus(p);
+                            const acts = Array.isArray(p.activities) ? p.activities.join(', ') : (p.activities || '');
+                            return `
+                              <div class="py-3 flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+                                <div class="min-w-0 flex-1">
+                                  <div class="flex items-center gap-2 flex-wrap">
+                                    <div class="font-semibold text-gray-900">${p.student_name || ''} ${p.student_surname || ''}</div>
+                                    <span class="text-xs text-gray-500">${p.course || ''}</span>
+                                    <span class="status-badge ${getStatusClass(st)}">${getStatusText(st)}</span>
+                                  </div>
+                                  <div class="text-sm text-gray-700 mt-1 truncate">${acts}</div>
+                                </div>
+                                <div class="flex items-center gap-3 md:gap-4 flex-wrap justify-end">
+                                  <div class="text-sm text-gray-700"><span class="text-gray-500">Vence:</span> ${ui?.formatDateES ? ui.formatDateES(p.due_date) : (p.due_date ? new Date(p.due_date).toLocaleDateString('es-ES') : '—')}</div>
+                                  <div class="text-sm font-semibold text-gray-900">${ui?.formatCurrencyEUR ? ui.formatCurrencyEUR(p.amount) : `€${p.amount}`}</div>
+                                  <div class="flex items-center gap-3 text-sm font-semibold">
+                                    ${st !== 'paid' ? `<button onclick="markAsPaid('${p.id}')" class="text-green-700 hover:text-green-900">Marcar pagado</button>` : `<button onclick="markAsUnpaid('${p.id}')" class="text-orange-700 hover:text-orange-900">Desmarcar</button>`}
+                                    <button onclick="copyConcept('${escapeAttr(p.student_name)}', '${escapeAttr(p.student_surname)}', '${escapeAttr(p.course)}', '${escapeAttr(acts)}')" class="text-blue-700 hover:text-blue-900">Copiar concepto</button>
+                                    <button onclick="viewStudentHistory('${escapeAttr(p.student_name)}', '${escapeAttr(p.student_surname)}')" class="text-purple-700 hover:text-purple-900">Historial</button>
+                                  </div>
+                                </div>
+                              </div>
+                            `;
+                        })
+                        .join('');
+
+                    return `
+                      <details class="p-0" data-month-key="${k}">
+                        <summary class="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between gap-4">
+                          <div class="flex items-center gap-3 min-w-0">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-700 font-bold">${k === 'Sin fecha' ? '—' : k.split('-')[1]}</span>
+                            <div class="min-w-0">
+                              <div class="font-semibold text-gray-900 truncate">${monthLabel(k)}</div>
+                              <div class="text-sm text-gray-500">${list.length} pagos</div>
+                            </div>
+                          </div>
+                          <div class="flex flex-wrap gap-x-6 gap-y-1 items-center justify-end text-sm">
+                            <div class="text-gray-700">Total: <span class="font-semibold text-gray-900">${fmt(total)}</span></div>
+                            <div class="text-green-700">Pagado: <span class="font-semibold">${fmt(paid)}</span></div>
+                            <div class="text-yellow-700">Pendiente: <span class="font-semibold">${fmt(pending)}</span></div>
+                            <div class="text-red-700">Vencido: <span class="font-semibold">${fmt(overdue)}</span></div>
+                          </div>
+                        </summary>
+                        <div class="px-6 pb-4">
+                          <div class="divide-y divide-gray-200">
+                            ${rows}
+                          </div>
+                        </div>
+                      </details>
+                    `;
+                })
+                .join('');
+        }
+
+        function setView(next) {
+            currentView = next;
+            const btnList = document.getElementById('view-list');
+            const btnMonth = document.getElementById('view-month');
+            const secList = document.getElementById('section-view-list');
+            const secMonth = document.getElementById('section-view-month');
+
+            const setBtn = (btn, active) => {
+                if (!btn) return;
+                btn.classList.toggle('bg-blue-600', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('hover:bg-blue-700', active);
+                btn.classList.toggle('text-gray-700', !active);
+                btn.classList.toggle('hover:bg-gray-50', !active);
+            };
+
+            setBtn(btnList, next === 'list');
+            setBtn(btnMonth, next === 'month');
+            if (secList) secList.classList.toggle('hidden', next !== 'list');
+            if (secMonth) secMonth.classList.toggle('hidden', next !== 'month');
+
+            renderCurrentView();
+        }
+
+        function renderCurrentView() {
+            if (currentView === 'month') {
+                renderMonthlyView();
+            } else {
+                // lista ya se renderiza en renderPayments()
+            }
+        }
+
+        function expandAllMonths() {
+            const container = document.getElementById('payments-by-month');
+            if (!container) return;
+            container.querySelectorAll('details').forEach(d => d.open = true);
+        }
+
         function getStatusClass(status) {
             switch (status) {
                 case 'paid': return 'bg-green-100 text-green-800';
@@ -556,6 +740,7 @@
 
             renderPayments();
             updateFilteredSummary();
+            renderCurrentView();
         }
 
         function resetFilters() {
@@ -785,6 +970,11 @@
             document.getElementById('year-filter').addEventListener('change', applyFilters);
             document.getElementById('sort-by').addEventListener('change', applyFilters);
             document.getElementById('search-input').addEventListener('input', applyFilters);
+
+            const btnList = document.getElementById('view-list');
+            const btnMonth = document.getElementById('view-month');
+            if (btnList) btnList.addEventListener('click', () => setView('list'));
+            if (btnMonth) btnMonth.addEventListener('click', () => setView('month'));
             
             document.getElementById('record-payment-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
