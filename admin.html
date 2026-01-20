@@ -1176,14 +1176,26 @@
             });
 
             if (shouldSort) {
+                // Course rank helper
+                const getCourseRank = (c) => {
+                    if (!c) return 99;
+                    const val = c.toLowerCase();
+                    if (val.includes('i3')) return 0;
+                    if (val.includes('i4')) return 1;
+                    if (val.includes('i5')) return 2;
+                    const match = val.match(/(\d+)/);
+                    if (match) return parseInt(match[1]) + 10;
+                    return 98;
+                };
+
                 rows.sort((a, b) => {
                     const actA = String(a.single_activity || '');
                     const actB = String(b.single_activity || '');
                     if (actA !== actB) return actA.localeCompare(actB);
 
-                    const courseA = String(a.course || '');
-                    const courseB = String(b.course || '');
-                    if (courseA !== courseB) return courseA.localeCompare(courseB);
+                    const rankA = getCourseRank(a.course);
+                    const rankB = getCourseRank(b.course);
+                    if (rankA !== rankB) return rankA - rankB;
 
                     return (a.name || '').localeCompare(b.name || '');
                 });
@@ -1251,98 +1263,124 @@
 
         function generatePDF() {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
+            const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
             const shouldSort = document.getElementById('export-sort').checked;
             const rows = getFlattenedData(shouldSort);
 
-            doc.setFontSize(18);
-            doc.text('Listado de Inscripciones - Extraescolares', 14, 20);
+            const pageWidth = doc.internal.pageSize.getWidth();
+
+            doc.setFontSize(22);
+            doc.setTextColor(41, 128, 185);
+            doc.text('Listado de Grupos - Extraescolares', 14, 20);
+
             doc.setFontSize(10);
-            doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 14, 27);
+            doc.setTextColor(100);
+            doc.text(`AFA Escola Falguera - Generado el ${new Date().toLocaleString('es-ES')}`, 14, 27);
+            doc.text(`Total inscripciones filtradas: ${rows.length}`, pageWidth - 14, 27, { align: 'right' });
 
             let yPos = 35;
 
             if (shouldSort) {
-                // Group by activity for better visualization
+                // Group by Activity only for clearer visualization
                 let currentActivity = '';
-                let currentCourse = '';
                 let groupData = [];
 
                 rows.forEach((r, index) => {
                     const activity = r.single_activity || 'Sin Actividad';
-                    const course = r.course || 'Sin Curso';
 
-                    if (activity !== currentActivity || course !== currentCourse) {
+                    if (activity !== currentActivity) {
                         // Print previous group table if exists
                         if (groupData.length > 0) {
                             doc.autoTable({
                                 startY: yPos,
-                                head: [['Nombre', 'Apellidos', 'Socio', 'Teléfono']],
+                                head: [['#', 'Nombre', 'Apellidos', 'Curso', 'Teléfono', 'Observaciones']],
                                 body: groupData,
-                                margin: { left: 14 },
+                                margin: { left: 14, right: 14 },
                                 theme: 'striped',
-                                headStyles: { fillStyle: [41, 128, 185] }
+                                headStyles: { fillColor: [41, 128, 185], fontSize: 11 },
+                                styles: { fontSize: 10, cellPadding: 3 },
+                                columnStyles: {
+                                    0: { cellWidth: 10 }, // #
+                                    3: { cellWidth: 35 }, // Curso
+                                    4: { cellWidth: 35 }  // Teléfono
+                                }
                             });
-                            yPos = doc.lastAutoTable.finalY + 10;
+                            yPos = doc.lastAutoTable.finalY + 15;
                         }
 
-                        // Check for new page
-                        if (yPos > 250) {
+                        // Check for new page space
+                        if (yPos > 160 && index < rows.length - 1) { // Landscape height limit
                             doc.addPage();
                             yPos = 20;
                         }
 
-                        doc.setFontSize(12);
+                        doc.setFontSize(16);
+                        doc.setTextColor(44, 62, 80);
                         doc.setFont(undefined, 'bold');
-                        doc.text(`${activity} - ${course}`, 14, yPos);
+                        doc.text(`Actividad: ${activity.toUpperCase()}`, 14, yPos);
+
+                        // Count kids in this activity
+                        const count = rows.filter(row => row.single_activity === activity).length;
+                        doc.setFontSize(10);
                         doc.setFont(undefined, 'normal');
-                        yPos += 5;
+                        doc.setTextColor(127, 140, 141);
+                        doc.text(`(${count} alumnos inscritos)`, pageWidth - 14, yPos, { align: 'right' });
+
+                        yPos += 7;
 
                         currentActivity = activity;
-                        currentCourse = course;
                         groupData = [];
                     }
 
                     groupData.push([
+                        groupData.length + 1, // Counter per activity
                         r.name,
                         r.surname,
-                        r.parent.afa_member ? 'Sí' : 'No',
-                        r.parent.parent_phone_1 || ''
+                        r.course,
+                        r.parent.parent_phone_1 || '',
+                        '' // Space for annotations
                     ]);
 
                     // Print last group
                     if (index === rows.length - 1) {
                         doc.autoTable({
                             startY: yPos,
-                            head: [['Nombre', 'Apellidos', 'Socio', 'Teléfono']],
+                            head: [['#', 'Nombre', 'Apellidos', 'Curso', 'Teléfono', 'Observaciones']],
                             body: groupData,
-                            margin: { left: 14 },
+                            margin: { left: 14, right: 14 },
                             theme: 'striped',
-                            headStyles: { fillStyle: [41, 128, 185] }
+                            headStyles: { fillColor: [41, 128, 185], fontSize: 11 },
+                            styles: { fontSize: 10, cellPadding: 3 },
+                            columnStyles: {
+                                0: { cellWidth: 10 },
+                                3: { cellWidth: 35 },
+                                4: { cellWidth: 35 }
+                            }
                         });
                     }
                 });
             } else {
-                // Normal table
-                const tableData = rows.map(r => [
+                // Simple list if not grouped
+                const tableData = rows.map((r, i) => [
+                    i + 1,
                     r.single_activity,
                     r.course,
                     `${r.name} ${r.surname}`,
-                    r.parent.afa_member ? 'Sí' : 'No',
                     r.parent.parent_phone_1 || ''
                 ]);
 
                 doc.autoTable({
                     startY: yPos,
-                    head: [['Actividad', 'Curso', 'Alumno', 'Socio', 'Teléfono']],
+                    head: [['#', 'Actividad', 'Curso', 'Alumno', 'Teléfono']],
                     body: tableData,
-                    theme: 'grid'
+                    theme: 'grid',
+                    headStyles: { fillColor: [41, 128, 185] }
                 });
             }
 
-            doc.save(`inscripciones_${new Date().toISOString().split('T')[0]}.pdf`);
+            doc.save(`listado_extraescolares_${new Date().toISOString().split('T')[0]}.pdf`);
             closeExportModal();
-            showSuccess('PDF generado correctamente');
+            showSuccess('PDF (Apaisado) generado correctamente');
         }
 
         function setupEventListeners() {
