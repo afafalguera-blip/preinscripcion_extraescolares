@@ -7,7 +7,11 @@
     <title>Panel de Administración - AFA Escola Falguera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Excel Export Library -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -418,6 +422,15 @@
                                 d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
                         Descargar Excel
+                    </button>
+                    <button id="confirm-pdf"
+                        class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        Descargar PDF
                     </button>
                 </div>
             </div>
@@ -1120,18 +1133,12 @@
         function openExportModal() {
             document.getElementById('export-modal').classList.remove('hidden');
         }
-
         function closeExportModal() {
             document.getElementById('export-modal').classList.add('hidden');
         }
 
-        function generateExcel() {
-            const exportType = document.querySelector('input[name="export-type"]:checked').value;
-            const shouldSort = document.getElementById('export-sort').checked;
-
-            // Flatten data: one row per student (or activity if sorting by activity)
+        function getFlattenedData(shouldSort) {
             let rows = [];
-
             filteredInscriptions.forEach(ins => {
                 const students = ins.students && Array.isArray(ins.students) ?
                     ins.students :
@@ -1144,18 +1151,13 @@
                     }];
 
                 students.forEach(student => {
-                    // Skip if filtered by status and student doesn't match? 
-                    // Actually filteredInscriptions already contains what we want, 
-                    // but if it's a multi-student inscription, we might have mixed states.
-                    // The table logic handles this visually, let's match it.
                     const isSuspended = student.suspended === true;
-                    // Note: if status-filter is used, apply it here too for the flattened records
                     const statusFilter = document.getElementById('status-filter').value;
                     if (statusFilter === 'alta' && (isSuspended || ins.status === 'baja')) return;
                     if (statusFilter === 'baja' && (!isSuspended && ins.status !== 'baja')) return;
+                    if (statusFilter === 'suspended' && !isSuspended) return;
 
                     if (shouldSort && student.activities && student.activities.length > 0) {
-                        // Create a row for each activity if we want to sort by activity
                         student.activities.forEach(activity => {
                             rows.push({
                                 ...student,
@@ -1175,17 +1177,24 @@
 
             if (shouldSort) {
                 rows.sort((a, b) => {
-                    const actA = a.single_activity || '';
-                    const actB = b.single_activity || '';
+                    const actA = String(a.single_activity || '');
+                    const actB = String(b.single_activity || '');
                     if (actA !== actB) return actA.localeCompare(actB);
 
-                    const courseA = a.course || '';
-                    const courseB = b.course || '';
+                    const courseA = String(a.course || '');
+                    const courseB = String(b.course || '');
                     if (courseA !== courseB) return courseA.localeCompare(courseB);
 
                     return (a.name || '').localeCompare(b.name || '');
                 });
             }
+            return rows;
+        }
+
+        function generateExcel() {
+            const exportType = document.querySelector('input[name="export-type"]:checked').value;
+            const shouldSort = document.getElementById('export-sort').checked;
+            const rows = getFlattenedData(shouldSort);
 
             let exportData = [];
             let headers = [];
@@ -1240,6 +1249,102 @@
             showSuccess('Excel generado correctamente');
         }
 
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const shouldSort = document.getElementById('export-sort').checked;
+            const rows = getFlattenedData(shouldSort);
+
+            doc.setFontSize(18);
+            doc.text('Listado de Inscripciones - Extraescolares', 14, 20);
+            doc.setFontSize(10);
+            doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 14, 27);
+
+            let yPos = 35;
+
+            if (shouldSort) {
+                // Group by activity for better visualization
+                let currentActivity = '';
+                let currentCourse = '';
+                let groupData = [];
+
+                rows.forEach((r, index) => {
+                    const activity = r.single_activity || 'Sin Actividad';
+                    const course = r.course || 'Sin Curso';
+
+                    if (activity !== currentActivity || course !== currentCourse) {
+                        // Print previous group table if exists
+                        if (groupData.length > 0) {
+                            doc.autoTable({
+                                startY: yPos,
+                                head: [['Nombre', 'Apellidos', 'Socio', 'Teléfono']],
+                                body: groupData,
+                                margin: { left: 14 },
+                                theme: 'striped',
+                                headStyles: { fillStyle: [41, 128, 185] }
+                            });
+                            yPos = doc.lastAutoTable.finalY + 10;
+                        }
+
+                        // Check for new page
+                        if (yPos > 250) {
+                            doc.addPage();
+                            yPos = 20;
+                        }
+
+                        doc.setFontSize(12);
+                        doc.setFont(undefined, 'bold');
+                        doc.text(`${activity} - ${course}`, 14, yPos);
+                        doc.setFont(undefined, 'normal');
+                        yPos += 5;
+
+                        currentActivity = activity;
+                        currentCourse = course;
+                        groupData = [];
+                    }
+
+                    groupData.push([
+                        r.name,
+                        r.surname,
+                        r.parent.afa_member ? 'Sí' : 'No',
+                        r.parent.parent_phone_1 || ''
+                    ]);
+
+                    // Print last group
+                    if (index === rows.length - 1) {
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [['Nombre', 'Apellidos', 'Socio', 'Teléfono']],
+                            body: groupData,
+                            margin: { left: 14 },
+                            theme: 'striped',
+                            headStyles: { fillStyle: [41, 128, 185] }
+                        });
+                    }
+                });
+            } else {
+                // Normal table
+                const tableData = rows.map(r => [
+                    r.single_activity,
+                    r.course,
+                    `${r.name} ${r.surname}`,
+                    r.parent.afa_member ? 'Sí' : 'No',
+                    r.parent.parent_phone_1 || ''
+                ]);
+
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Actividad', 'Curso', 'Alumno', 'Socio', 'Teléfono']],
+                    body: tableData,
+                    theme: 'grid'
+                });
+            }
+
+            doc.save(`inscripciones_${new Date().toISOString().split('T')[0]}.pdf`);
+            closeExportModal();
+            showSuccess('PDF generado correctamente');
+        }
+
         function setupEventListeners() {
             // Refresh button
             document.getElementById('refresh-btn').addEventListener('click', loadInscriptions);
@@ -1247,6 +1352,7 @@
             // Export button
             document.getElementById('export-btn').addEventListener('click', openExportModal);
             document.getElementById('confirm-export').addEventListener('click', generateExcel);
+            document.getElementById('confirm-pdf').addEventListener('click', generatePDF);
             document.getElementById('cancel-export').addEventListener('click', closeExportModal);
             document.getElementById('close-export-modal').addEventListener('click', closeExportModal);
 
