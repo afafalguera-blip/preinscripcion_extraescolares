@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="ca">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - AFA Escola Falguera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3498db;
@@ -17,19 +22,39 @@
             height: 20px;
             animation: spin 1s linear infinite;
         }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
+
         .status-badge {
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 600;
         }
-        .status-pending { background-color: #fef3c7; color: #92400e; }
-        .status-confirmed { background-color: #d1fae5; color: #065f46; }
-        .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-confirmed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
         .student-suspended {
             opacity: 0.6;
             background-color: #fef3c7;
@@ -38,6 +63,7 @@
         }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <div class="min-h-screen">
         <!-- Header -->
@@ -50,36 +76,51 @@
                     </div>
                     <div class="flex items-center space-x-2">
                         <!-- Refresh Button -->
-                        <button id="refresh-btn" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center" title="Actualizar datos">
+                        <button id="refresh-btn"
+                            class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                            title="Actualizar datos">
                             <span id="refresh-icon" class="block">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                    </path>
                                 </svg>
                             </span>
                             <div id="refresh-loader" class="loader hidden"></div>
                             <span id="refresh-text" class="ml-2 hidden lg:block">Actualizar</span>
                         </button>
-                        
+
                         <!-- Export Button -->
-                        <button id="export-btn" class="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center" title="Exportar CSV">
+                        <button id="export-btn"
+                            class="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                            title="Exportar Excel">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
                             </svg>
-                            <span class="ml-2 hidden lg:block">Exportar CSV</span>
+                            <span class="ml-2 hidden lg:block">Exportar Excel</span>
                         </button>
-                        
+
                         <!-- Payment Management Button -->
-                        <a href="payment_admin.html" class="bg-purple-600 text-white p-3 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center" title="Gestión de Pagos">
+                        <a href="payment_admin.html"
+                            class="bg-purple-600 text-white p-3 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center"
+                            title="Gestión de Pagos">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1">
+                                </path>
                             </svg>
                             <span class="ml-2 hidden lg:block">Gestión de Pagos</span>
                         </a>
-                        
+
                         <!-- Logout Button -->
-                        <button onclick="logout()" class="bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center" title="Cerrar sesión">
+                        <button onclick="logout()"
+                            class="bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center"
+                            title="Cerrar sesión">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                             <span class="ml-2 hidden lg:block">Cerrar Sesión</span>
                         </button>
@@ -95,7 +136,9 @@
                     <div class="flex items-center">
                         <div class="p-2 bg-blue-100 rounded-lg">
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                </path>
                             </svg>
                         </div>
                         <div class="ml-4">
@@ -109,7 +152,8 @@
                     <div class="flex items-center">
                         <div class="p-2 bg-yellow-100 rounded-lg">
                             <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
                         <div class="ml-4">
@@ -123,7 +167,8 @@
                     <div class="flex items-center">
                         <div class="p-2 bg-green-100 rounded-lg">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
                         <div class="ml-4">
@@ -137,7 +182,9 @@
                     <div class="flex items-center">
                         <div class="p-2 bg-purple-100 rounded-lg">
                             <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                </path>
                             </svg>
                         </div>
                         <div class="ml-4">
@@ -176,13 +223,15 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Estado:</label>
                         <select id="status-filter" class="border border-gray-300 rounded-md px-3 py-2">
                             <option value="all">Todos</option>
-                            <option value="alta">Altas</option>
+                            <option value="alta">Activos (sin suspendidos)</option>
+                            <option value="suspended">Suspendidos</option>
                             <option value="baja">Bajas</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Buscar:</label>
-                        <input type="text" id="search-input" placeholder="Nombre del alumno..." class="border border-gray-300 rounded-md px-3 py-2">
+                        <input type="text" id="search-input" placeholder="Nombre del alumno..."
+                            class="border border-gray-300 rounded-md px-3 py-2">
                     </div>
                 </div>
             </div>
@@ -192,19 +241,34 @@
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-gray-900">Lista de Inscripciones</h3>
                 </div>
-                
+
                 <!-- Desktop Table View -->
-                <div class="hidden md:block overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <div
+                    class="hidden md:block overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     <table class="min-w-full divide-y divide-gray-200" style="min-width: 800px;">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alumno</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Curso</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actividades</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AFA</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Alumno</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Curso</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actividades</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Contacto</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    AFA</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Fecha</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="inscriptions-table-body" class="bg-white divide-y divide-gray-200">
@@ -227,14 +291,16 @@
     </div>
 
     <!-- Modal for viewing full details -->
-    <div id="detail-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
+    <div id="detail-modal"
+        class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
         <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-4xl">
             <div class="p-6">
                 <div class="flex justify-between items-start mb-4">
                     <h3 class="text-2xl font-semibold text-gray-900">Detalles de la Inscripción</h3>
                     <button id="close-modal" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -245,15 +311,17 @@
         </div>
     </div>
 
-        <!-- Modal for editing inscription -->
-    <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
+    <!-- Modal for editing inscription -->
+    <div id="edit-modal"
+        class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
         <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-6xl">
             <div class="p-6">
                 <div class="flex justify-between items-start mb-4">
                     <h3 class="text-2xl font-semibold text-gray-900">Editar Inscripción</h3>
                     <button id="close-edit-modal" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -261,10 +329,12 @@
                     <!-- Content will be loaded here -->
                 </div>
                 <div class="flex justify-end space-x-4 mt-6 pt-4 border-t">
-                    <button id="cancel-edit" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+                    <button id="cancel-edit"
+                        class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
                         Cancelar
                     </button>
-                    <button id="save-edit" class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                    <button id="save-edit"
+                        class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
                         Guardar Cambios
                     </button>
                 </div>
@@ -272,14 +342,16 @@
         </div>
 
         <!-- Modal for history -->
-        <div id="history-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
+        <div id="history-modal"
+            class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
             <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-3xl">
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-2xl font-semibold text-gray-900">Historial de la Inscripción</h3>
                         <button id="close-history-modal" class="text-gray-400 hover:text-gray-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
                     </div>
@@ -291,23 +363,84 @@
         </div>
     </div>
 
+    <!-- Modal for export options -->
+    <div id="export-modal"
+        class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 z-50 hidden">
+        <div class="relative mx-auto shadow-lg rounded-md bg-white w-full max-w-md">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">Opciones de Exportación</h3>
+                    <button id="close-export-modal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Contenido:</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="export-type" value="full" checked class="mr-2">
+                                <span class="text-sm">Todos los datos personales (Completo)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="export-type" value="compact" class="mr-2">
+                                <span class="text-sm">Solo Nombre, Curso y Actividad (Listado)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="export-sort" checked
+                                class="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                            <span class="text-sm font-medium text-gray-700">Ordenar por Actividad y Curso</span>
+                        </label>
+                    </div>
+
+                    <div class="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-100 italic">
+                        Nota: Se exportarán los registros actualmente filtrados en la tabla superior.
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                    <button id="cancel-export"
+                        class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="confirm-export"
+                        class="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Descargar Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Check authentication IMMEDIATELY on page load
         function checkAuthentication() {
             const isAuthenticated = sessionStorage.getItem('admin_authenticated');
             const loginTime = sessionStorage.getItem('admin_login_time');
             const userId = sessionStorage.getItem('admin_user_id');
-            
+
             if (isAuthenticated !== 'true' || !loginTime || !userId) {
                 window.location.href = 'admin_login.html';
                 return false;
             }
-            
+
             // Check if session has expired (24 hours)
             const loginDate = new Date(loginTime);
             const now = new Date();
             const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
-            
+
             if (hoursDiff >= 24) {
                 // Expired session
                 sessionStorage.removeItem('admin_authenticated');
@@ -317,7 +450,7 @@
                 window.location.href = 'admin_login.html';
                 return false;
             }
-            
+
             return true;
         }
 
@@ -333,11 +466,11 @@
     <script type="module">
 
         const { createClient } = supabase;
-        
+
         // Supabase configuration (use the same credentials)
         const SUPABASE_URL = "https://zaxbtnjkidqwzqsehvld.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpheGJ0bmpraWRxd3pxc2VodmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMjc2NTMsImV4cCI6MjA3MzYwMzY1M30.9MNjQdeLvW_UaxZz0XQmR6jQSakzF-UzBWvdboWWHRg";
-        
+
         let supabaseClient;
         let allInscriptions = [];
         let filteredInscriptions = [];
@@ -358,7 +491,7 @@
             if (!checkAuthentication()) {
                 return;
             }
-            
+
             loadInscriptions();
             setupEventListeners();
         });
@@ -368,7 +501,7 @@
             if (!checkAuthentication()) {
                 return;
             }
-            
+
             setLoading(true);
             try {
                 const { data, error } = await supabaseClient
@@ -444,17 +577,17 @@
                     });
                 }
             });
-            
+
             const mostPopular = Object.entries(activityCounts)
-                .sort(([,a], [,b]) => b - a)[0];
-            
+                .sort(([, a], [, b]) => b - a)[0];
+
             document.getElementById('popular-activity').textContent = mostPopular ? mostPopular[0] : 'N/A';
         }
 
         function populateActivityFilter() {
             const activityFilter = document.getElementById('activity-filter');
             const activities = new Set();
-            
+
             allInscriptions.forEach(ins => {
                 if (ins.students && Array.isArray(ins.students)) {
                     // New format with multiple students
@@ -488,31 +621,30 @@
             // Create individual row arrays for each student
             const tableRows = [];
             const mobileCards = [];
-            
+            const statusFilter = document.getElementById('status-filter').value;
+
             pageData.forEach(inscription => {
                 if (inscription.students && Array.isArray(inscription.students)) {
                     // New format with multiple students - create a row per student
                     inscription.students.forEach((student, studentIndex) => {
                         // Check if student is suspended
                         const isSuspended = student.suspended === true;
-                        const statusFilter = document.getElementById('status-filter').value;
-                        
                         // Apply status filter only if it's not "all"
-                        if (statusFilter === 'active' && isSuspended) return;
+                        if (statusFilter === 'alta' && isSuspended) return;
                         if (statusFilter === 'suspended' && !isSuspended) return;
-                        
-                        const activitiesInfo = student.activities ? 
-                            (student.activities.slice(0, 2).join(', ') + 
-                            (student.activities.length > 2 ? ` +${student.activities.length - 2} más` : '')) : 
+
+                        const activitiesInfo = student.activities ?
+                            (student.activities.slice(0, 2).join(', ') +
+                                (student.activities.length > 2 ? ` +${student.activities.length - 2} más` : '')) :
                             'N/A';
-                        
+
                         const rowClass = isSuspended ? 'bg-yellow-50 opacity-75' : 'hover:bg-gray-50';
-                        const statusBadge = isSuspended ? 
+                        const statusBadge = isSuspended ?
                             '<span class="status-badge bg-yellow-100 text-yellow-800">Suspendido</span>' :
                             `<span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
                                 ${inscription.afa_member ? 'Sí' : 'No'}
                             </span>`;
-                        
+
                         // Desktop table row
                         tableRows.push(`
                         <tr class="${rowClass}">
@@ -543,14 +675,14 @@
                                 <button onclick="editInscription('${inscription.id}')" class="text-green-600 hover:text-green-900 mr-3">
                                     Editar
                                 </button>
-                                ${inscription.status === 'baja' ? 
-                                    `<button onclick="darDeAltaInscripcion('${inscription.id}')" class="text-green-600 hover:text-green-800 mr-3">
+                                ${inscription.status === 'baja' ?
+                                `<button onclick="darDeAltaInscripcion('${inscription.id}')" class="text-green-600 hover:text-green-800 mr-3">
                                         Alta
                                     </button>` :
-                                    `<button onclick="darDeBajaInscripcion('${inscription.id}')" class="text-amber-600 hover:text-amber-800 mr-3">
+                                `<button onclick="darDeBajaInscripcion('${inscription.id}')" class="text-amber-600 hover:text-amber-800 mr-3">
                                         Baja
                                     </button>`
-                                }
+                            }
                                 <button onclick="verHistorialInscripcion('${inscription.id}')" class="text-purple-600 hover:text-purple-800 mr-3">
                                     Historial
                                 </button>
@@ -607,19 +739,19 @@
                                     Editar
                                 </button>
                                 ${inscription.status === 'baja' ?
-                                    `<button onclick="darDeAltaInscripcion('${inscription.id}')" class="bg-green-600 text-white px-3 py-2 rounded-md text-sm hover:bg-green-700 flex items-center">
+                                `<button onclick="darDeAltaInscripcion('${inscription.id}')" class="bg-green-600 text-white px-3 py-2 rounded-md text-sm hover:bg-green-700 flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
                                         Alta
                                     </button>` :
-                                    `<button onclick="darDeBajaInscripcion('${inscription.id}')" class="bg-amber-600 text-white px-3 py-2 rounded-md text-sm hover:bg-amber-700 flex items-center">
+                                `<button onclick="darDeBajaInscripcion('${inscription.id}')" class="bg-amber-600 text-white px-3 py-2 rounded-md text-sm hover:bg-amber-700 flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path>
                                         </svg>
                                         Baja
                                     </button>`
-                                }
+                            }
                                 <button onclick="verHistorialInscripcion('${inscription.id}')" class="bg-purple-600 text-white px-3 py-2 rounded-md text-sm hover:bg-purple-700 flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"></path>
@@ -639,24 +771,22 @@
                 } else {
                     // Old format with single student
                     const isSuspended = inscription.student_suspended === true;
-                    const statusFilter = document.getElementById('status-filter').value;
-                    
                     // Apply status filter only if it's not "all"
-                    if (statusFilter === 'active' && isSuspended) return;
+                    if (statusFilter === 'alta' && isSuspended) return;
                     if (statusFilter === 'suspended' && !isSuspended) return;
-                    
-                    const activitiesInfo = inscription.activities ? 
-                        (inscription.activities.slice(0, 2).join(', ') + 
-                        (inscription.activities.length > 2 ? ` +${inscription.activities.length - 2} más` : '')) : 
+
+                    const activitiesInfo = inscription.activities ?
+                        (inscription.activities.slice(0, 2).join(', ') +
+                            (inscription.activities.length > 2 ? ` +${inscription.activities.length - 2} más` : '')) :
                         'N/A';
-                    
+
                     const rowClass = isSuspended ? 'bg-yellow-50 opacity-75' : 'hover:bg-gray-50';
-                    const statusBadge = isSuspended ? 
+                    const statusBadge = isSuspended ?
                         '<span class="status-badge bg-yellow-100 text-yellow-800">Suspendido</span>' :
                         `<span class="status-badge ${inscription.afa_member ? 'status-confirmed' : 'status-pending'}">
                             ${inscription.afa_member ? 'Sí' : 'No'}
                         </span>`;
-                    
+
                     // Desktop table row
                     tableRows.push(`
                     <tr class="${rowClass}">
@@ -687,14 +817,14 @@
                             <button onclick="editInscription('${inscription.id}')" class="text-green-600 hover:text-green-900 mr-3">
                                 Editar
                             </button>
-                            ${inscription.status === 'baja' ? 
-                                `<button onclick="darDeAltaInscripcion('${inscription.id}')" class="text-green-600 hover:text-green-800 mr-3">
+                            ${inscription.status === 'baja' ?
+                            `<button onclick="darDeAltaInscripcion('${inscription.id}')" class="text-green-600 hover:text-green-800 mr-3">
                                     Alta
                                 </button>` :
-                                `<button onclick="darDeBajaInscripcion('${inscription.id}')" class="text-amber-600 hover:text-amber-800 mr-3">
+                            `<button onclick="darDeBajaInscripcion('${inscription.id}')" class="text-amber-600 hover:text-amber-800 mr-3">
                                     Baja
                                 </button>`
-                            }
+                        }
                             <button onclick="verHistorialInscripcion('${inscription.id}')" class="text-purple-600 hover:text-purple-800 mr-3">
                                 Historial
                             </button>
@@ -751,19 +881,19 @@
                                 Editar
                             </button>
                             ${inscription.status === 'baja' ?
-                                `<button onclick="darDeAltaInscripcion('${inscription.id}')" class="bg-green-600 text-white px-3 py-2 rounded-md text-sm hover:bg-green-700 flex items-center">
+                            `<button onclick="darDeAltaInscripcion('${inscription.id}')" class="bg-green-600 text-white px-3 py-2 rounded-md text-sm hover:bg-green-700 flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                     </svg>
                                     Alta
                                 </button>` :
-                                `<button onclick="darDeBajaInscripcion('${inscription.id}')" class="bg-amber-600 text-white px-3 py-2 rounded-md text-sm hover:bg-amber-700 flex items-center">
+                            `<button onclick="darDeBajaInscripcion('${inscription.id}')" class="bg-amber-600 text-white px-3 py-2 rounded-md text-sm hover:bg-amber-700 flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path>
                                     </svg>
                                     Baja
                                 </button>`
-                            }
+                        }
                             <button onclick="verHistorialInscripcion('${inscription.id}')" class="bg-purple-600 text-white px-3 py-2 rounded-md text-sm hover:bg-purple-700 flex items-center">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"></path>
@@ -784,10 +914,10 @@
 
             // Render table (desktop)
             tbody.innerHTML = tableRows.join('');
-            
+
             // Render cards (mobile)
             if (cardsContainer) {
-                cardsContainer.innerHTML = mobileCards.length > 0 ? mobileCards.join('') : 
+                cardsContainer.innerHTML = mobileCards.length > 0 ? mobileCards.join('') :
                     '<div class="text-center py-8 text-gray-500">No hay inscripciones para mostrar</div>';
             } else {
                 console.error('Cards container not found!');
@@ -799,14 +929,14 @@
         function renderPagination() {
             const totalPages = Math.ceil(filteredInscriptions.length / itemsPerPage);
             const pagination = document.getElementById('pagination');
-            
+
             if (totalPages <= 1) {
                 pagination.innerHTML = '';
                 return;
             }
 
             let paginationHTML = '<div class="flex items-center space-x-2">';
-            
+
             // Previous button
             paginationHTML += `
                 <button onclick="changePage(${currentPage - 1})" 
@@ -857,9 +987,9 @@
 
             const modal = document.getElementById('detail-modal');
             const content = document.getElementById('modal-content');
-            
+
             let studentsHtml = '';
-            
+
             if (inscription.students && Array.isArray(inscription.students)) {
                 // New format with multiple students
                 studentsHtml = inscription.students.map((student, index) => `
@@ -889,7 +1019,7 @@
                     </div>
                 `;
             }
-            
+
             content.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     ${studentsHtml}
@@ -913,7 +1043,7 @@
                     </div>
                 </div>
             `;
-            
+
             modal.classList.remove('hidden');
         }
 
@@ -946,9 +1076,9 @@
                     if (localInscriptionIndex !== -1) {
                         allInscriptions[localInscriptionIndex].students = updatedStudents;
                     }
-                    
+
                     // Re-filter and re-render
-                    applyFilters(); 
+                    applyFilters();
                     updateStats();
                     showSuccess('Alumno eliminado correctamente.');
 
@@ -957,7 +1087,7 @@
                     showError('Error al eliminar el alumno: ' + error.message);
                 }
 
-            } 
+            }
             // Case 2: Deleting the entire inscription (last student or old format)
             else {
                 if (!confirm('¿Estás seguro de que quieres eliminar esta inscripción? Se eliminarán todos los alumnos asociados.')) {
@@ -974,7 +1104,7 @@
 
                     // Remove from local arrays
                     allInscriptions = allInscriptions.filter(ins => ins.id != inscriptionId);
-                    
+
                     // Re-filter and re-render
                     applyFilters();
                     updateStats();
@@ -987,93 +1117,159 @@
             }
         }
 
-        function exportToCSV() {
-            const headers = [
-                'ID', 'Alumnos', 'Cursos', 'Nombre Padre/Madre', 'DNI', 
-                'Teléfono 1', 'Teléfono 2', 'Email 1', 'Email 2', 'Socio AFA', 'Actividades', 
-                'Información Salud', 'Autorización Imagen', 'Puede Salir Solo', 'Personas Autorizadas', 
-                'Idioma Formulario', 'Fecha Inscripción'
-            ];
+        function openExportModal() {
+            document.getElementById('export-modal').classList.remove('hidden');
+        }
 
-            const csvContent = [
-                headers.join(','),
-                ...filteredInscriptions.map(ins => {
-                    let studentsInfo = '';
-                    let coursesInfo = '';
-                    let activitiesInfo = '';
-                    
-                    if (ins.students && Array.isArray(ins.students)) {
-                        // New format with multiple students
-                        studentsInfo = ins.students.map(s => `${s.name} ${s.surname}`).join('; ');
-                        coursesInfo = ins.students.map(s => s.course).join('; ');
-                        activitiesInfo = ins.students.flatMap(s => s.activities).join('; ');
+        function closeExportModal() {
+            document.getElementById('export-modal').classList.add('hidden');
+        }
+
+        function generateExcel() {
+            const exportType = document.querySelector('input[name="export-type"]:checked').value;
+            const shouldSort = document.getElementById('export-sort').checked;
+
+            // Flatten data: one row per student (or activity if sorting by activity)
+            let rows = [];
+
+            filteredInscriptions.forEach(ins => {
+                const students = ins.students && Array.isArray(ins.students) ?
+                    ins.students :
+                    [{
+                        name: ins.student_name,
+                        surname: ins.student_surname,
+                        course: ins.student_course,
+                        activities: ins.activities || [],
+                        suspended: ins.student_suspended
+                    }];
+
+                students.forEach(student => {
+                    // Skip if filtered by status and student doesn't match? 
+                    // Actually filteredInscriptions already contains what we want, 
+                    // but if it's a multi-student inscription, we might have mixed states.
+                    // The table logic handles this visually, let's match it.
+                    const isSuspended = student.suspended === true;
+                    // Note: if status-filter is used, apply it here too for the flattened records
+                    const statusFilter = document.getElementById('status-filter').value;
+                    if (statusFilter === 'alta' && (isSuspended || ins.status === 'baja')) return;
+                    if (statusFilter === 'baja' && (!isSuspended && ins.status !== 'baja')) return;
+
+                    if (shouldSort && student.activities && student.activities.length > 0) {
+                        // Create a row for each activity if we want to sort by activity
+                        student.activities.forEach(activity => {
+                            rows.push({
+                                ...student,
+                                single_activity: activity,
+                                parent: ins
+                            });
+                        });
                     } else {
-                        // Old format with single student
-                        studentsInfo = `${ins.student_name || ''} ${ins.student_surname || ''}`;
-                        coursesInfo = ins.student_course || '';
-                        activitiesInfo = ins.activities ? ins.activities.join('; ') : '';
+                        rows.push({
+                            ...student,
+                            single_activity: student.activities ? student.activities.join(', ') : '',
+                            parent: ins
+                        });
                     }
-                    
-                    return [
-                        ins.id,
-                        `"${studentsInfo}"`,
-                        coursesInfo,
-                        `"${ins.parent_name || ''}"`,
-                        ins.parent_dni || '',
-                        ins.parent_phone_1 || '',
-                        ins.parent_phone_2 || '',
-                        ins.parent_email_1 || '',
-                        ins.parent_email_2 || '',
-                        ins.afa_member ? 'Sí' : 'No',
-                        `"${activitiesInfo}"`,
-                        `"${(ins.health_info || '').replace(/"/g, '""')}"`,
-                        ins.image_auth_consent || '',
-                        ins.can_leave_alone ? 'Sí' : 'No',
-                        `"${(ins.authorized_pickup || '').replace(/"/g, '""')}"`,
-                        ins.form_language || '',
-                        ins.created_at ? new Date(ins.created_at).toLocaleDateString('es-ES') : 'N/A'
-                    ].join(',');
-                })
-            ].join('\n');
+                });
+            });
 
-            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `inscripciones_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            if (shouldSort) {
+                rows.sort((a, b) => {
+                    const actA = a.single_activity || '';
+                    const actB = b.single_activity || '';
+                    if (actA !== actB) return actA.localeCompare(actB);
+
+                    const courseA = a.course || '';
+                    const courseB = b.course || '';
+                    if (courseA !== courseB) return courseA.localeCompare(courseB);
+
+                    return (a.name || '').localeCompare(b.name || '');
+                });
+            }
+
+            let exportData = [];
+            let headers = [];
+
+            if (exportType === 'compact') {
+                headers = ['Actividad', 'Curso', 'Nombre', 'Apellidos', 'Socio AFA', 'Teléfono'];
+                exportData = rows.map(r => ({
+                    'Actividad': r.single_activity,
+                    'Curso': r.course,
+                    'Nombre': r.name,
+                    'Apellidos': r.surname,
+                    'Socio AFA': r.parent.afa_member ? 'Sí' : 'No',
+                    'Teléfono': r.parent.parent_phone_1 || ''
+                }));
+            } else {
+                headers = [
+                    'ID Inscrip.', 'Fecha', 'Actividad', 'Curso', 'Nombre Alumno', 'Apellidos Alumno',
+                    'Padre/Madre', 'DNI', 'Teléfono 1', 'Teléfono 2', 'Email 1', 'Email 2',
+                    'Socio AFA', 'Salud', 'Autorización Imagen', 'Sale Solo', 'Autorizados Recogida'
+                ];
+                exportData = rows.map(r => ({
+                    'ID Inscrip.': r.parent.id,
+                    'Fecha': r.parent.created_at ? new Date(r.parent.created_at).toLocaleDateString('es-ES') : '',
+                    'Actividad': r.single_activity,
+                    'Curso': r.course,
+                    'Nombre Alumno': r.name,
+                    'Apellidos Alumno': r.surname,
+                    'Padre/Madre': r.parent.parent_name || '',
+                    'DNI': r.parent.parent_dni || '',
+                    'Teléfono 1': r.parent.parent_phone_1 || '',
+                    'Teléfono 2': r.parent.parent_phone_2 || '',
+                    'Email 1': r.parent.parent_email_1 || '',
+                    'Email 2': r.parent.parent_email_2 || '',
+                    'Socio AFA': r.parent.afa_member ? 'Sí' : 'No',
+                    'Salud': r.parent.health_info || '',
+                    'Autorización Imagen': r.parent.image_auth_consent || '',
+                    'Sale Solo': r.parent.can_leave_alone ? 'Sí' : 'No',
+                    'Autorizados Recogida': r.parent.authorized_pickup || ''
+                }));
+            }
+
+            // Create workbook and worksheet
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Inscripciones");
+
+            // Save file
+            const fileName = `inscripciones_${exportType}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+
+            closeExportModal();
+            showSuccess('Excel generado correctamente');
         }
 
         function setupEventListeners() {
             // Refresh button
             document.getElementById('refresh-btn').addEventListener('click', loadInscriptions);
-            
+
             // Export button
-            document.getElementById('export-btn').addEventListener('click', exportToCSV);
-            
+            document.getElementById('export-btn').addEventListener('click', openExportModal);
+            document.getElementById('confirm-export').addEventListener('click', generateExcel);
+            document.getElementById('cancel-export').addEventListener('click', closeExportModal);
+            document.getElementById('close-export-modal').addEventListener('click', closeExportModal);
+
             // Filters
             document.getElementById('course-filter').addEventListener('change', applyFilters);
             document.getElementById('activity-filter').addEventListener('change', applyFilters);
             document.getElementById('status-filter').addEventListener('change', applyFilters);
             document.getElementById('search-input').addEventListener('input', applyFilters);
-            
+
             // Modal close
             document.getElementById('close-modal').addEventListener('click', () => {
                 document.getElementById('detail-modal').classList.add('hidden');
             });
-            
+
             // Edit modal close
             document.getElementById('close-edit-modal').addEventListener('click', () => {
                 document.getElementById('edit-modal').classList.add('hidden');
             });
-            
+
             document.getElementById('cancel-edit').addEventListener('click', () => {
                 document.getElementById('edit-modal').classList.add('hidden');
             });
-            
+
             document.getElementById('save-edit').addEventListener('click', saveInscriptionChanges);
 
             // History modal close
@@ -1103,7 +1299,7 @@
                 let matchesActivity = true;
                 if (activityFilter) {
                     if (inscription.students && Array.isArray(inscription.students)) {
-                        matchesActivity = inscription.students.some(student => 
+                        matchesActivity = inscription.students.some(student =>
                             student.activities && student.activities.includes(activityFilter)
                         );
                     } else {
@@ -1115,12 +1311,12 @@
                 if (searchTerm) {
                     const parentName = (inscription.parent_name || '').toLowerCase();
                     if (inscription.students && Array.isArray(inscription.students)) {
-                         matchesSearch = parentName.includes(searchTerm) || inscription.students.some(student => 
+                        matchesSearch = parentName.includes(searchTerm) || inscription.students.some(student =>
                             (student.name || '').toLowerCase().includes(searchTerm) ||
                             (student.surname || '').toLowerCase().includes(searchTerm)
                         );
                     } else {
-                         matchesSearch = parentName.includes(searchTerm) || 
+                        matchesSearch = parentName.includes(searchTerm) ||
                             (inscription.student_name && inscription.student_name.toLowerCase().includes(searchTerm)) ||
                             (inscription.student_surname && inscription.student_surname.toLowerCase().includes(searchTerm));
                     }
@@ -1144,7 +1340,7 @@
             const refreshBtn = document.getElementById('refresh-btn');
             const refreshText = document.getElementById('refresh-text');
             const refreshLoader = document.getElementById('refresh-loader');
-            
+
             if (refreshBtn) refreshBtn.disabled = isLoading;
             if (refreshText) refreshText.classList.toggle('hidden', isLoading);
             if (refreshLoader) refreshLoader.classList.toggle('hidden', !isLoading);
@@ -1189,9 +1385,9 @@
             currentEditingInscription = inscription;
             const modal = document.getElementById('edit-modal');
             const content = document.getElementById('edit-modal-content');
-            
+
             let studentsHtml = '';
-            
+
             if (inscription.students && Array.isArray(inscription.students)) {
                 // New format with multiple students
                 studentsHtml = inscription.students.map((student, index) => `
@@ -1307,7 +1503,7 @@
                     </div>
                 `;
             }
-            
+
             content.innerHTML = `
                 <div class="space-y-6">
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -1327,14 +1523,14 @@
                     </div>
                 </div>
             `;
-            
+
             modal.classList.remove('hidden');
-            
+
             // Add event listeners to update activities when the course changes
             setTimeout(() => {
                 const courseSelects = document.querySelectorAll('.student-course');
                 courseSelects.forEach((select, index) => {
-                    select.addEventListener('change', function() {
+                    select.addEventListener('change', function () {
                         updateActivitiesForStudent(index, this.value);
                     });
                 });
@@ -1359,11 +1555,11 @@
         function updateActivitiesForStudent(index, course) {
             const activitiesContainer = document.getElementById(`activities-${index}`);
             if (!activitiesContainer) return;
-            
+
             const activities = getActivitiesByCourse(course);
             const currentChecked = Array.from(activitiesContainer.querySelectorAll('.student-activity:checked'))
                 .map(checkbox => checkbox.value);
-            
+
             activitiesContainer.innerHTML = activities.map(activity => `
                 <label class="flex items-center">
                     <input type="checkbox" value="${activity}" 
@@ -1377,14 +1573,14 @@
         function toggleStudentStatus(index) {
             const studentsContainer = document.getElementById('students-container');
             const studentElement = studentsContainer.querySelector(`[data-student-index="${index}"]`);
-            
+
             if (studentElement) {
                 const statusCheckbox = studentElement.querySelector('.student-status');
                 const toggleButton = studentElement.querySelector('button[onclick*="toggleStudentStatus"]');
                 const isCurrentlyActive = statusCheckbox.checked;
-                
+
                 statusCheckbox.checked = !isCurrentlyActive;
-                
+
                 if (isCurrentlyActive) {
                     toggleButton.textContent = 'Reactivar';
                     toggleButton.className = 'text-green-600 hover:text-green-800 text-sm font-medium';
@@ -1401,7 +1597,7 @@
             const studentsContainer = document.getElementById('students-container');
             const currentCount = studentsContainer.querySelectorAll('[data-student-index]').length;
             const newIndex = currentCount;
-            
+
             const newStudentHtml = `
                 <div class="border border-gray-200 rounded-lg p-4" data-student-index="${newIndex}">
                     <div class="flex justify-between items-start mb-4">
@@ -1454,14 +1650,14 @@
                     </div>
                 </div>
             `;
-            
+
             studentsContainer.insertAdjacentHTML('beforeend', newStudentHtml);
-            
+
             // Add event listener for the new student
             setTimeout(() => {
                 const newSelect = document.querySelector(`[data-student-index="${newIndex}"] .student-course`);
                 if (newSelect) {
-                    newSelect.addEventListener('change', function() {
+                    newSelect.addEventListener('change', function () {
                         updateActivitiesForStudent(newIndex, this.value);
                     });
                 }
@@ -1558,14 +1754,14 @@
 
             const studentsContainer = document.getElementById('students-container');
             const students = studentsContainer.querySelectorAll('[data-student-index]');
-            
+
             if (students.length === 0) {
                 showError('Debe haber al menos un estudiante en la inscripción.');
                 return;
             }
 
             const updatedStudents = [];
-            
+
             students.forEach(studentElement => {
                 const name = studentElement.querySelector('.student-name').value.trim();
                 const surname = studentElement.querySelector('.student-surname').value.trim();
@@ -1604,9 +1800,9 @@
                     allInscriptions[index].students = updatedStudents;
                     updateStats(); // Recalculate stats after changing student count
                     // Re-apply filters with the updated data
-                    applyFilters(); 
+                    applyFilters();
                 }
-                
+
                 document.getElementById('edit-modal').classList.add('hidden');
                 showSuccess('Inscripción actualizada correctamente');
             } catch (error) {
@@ -1626,4 +1822,5 @@
         }
     </script>
 </body>
+
 </html>
